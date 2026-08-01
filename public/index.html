@@ -134,6 +134,13 @@ td.tick{text-align:center;width:56px}
 .banner ul{margin:6px 0 0;padding-left:20px}
 .banner li{margin:3px 0}
 .noteitem{background:#fff;border:1px solid #fcd34d;border-radius:var(--radius-sm);padding:9px 11px;margin:6px 0}
+.metrictiles{display:flex;gap:12px;flex-wrap:wrap;margin-top:4px}
+.metrictile{flex:1 1 140px;background:#fafbfc;border:1px solid var(--line);border-radius:var(--radius-sm);padding:16px 12px;text-align:center}
+.metrictile .mval{font-family:var(--font-display);font-size:30px;font-weight:700;color:var(--accent2)}
+.metrictile .mlabel{font-size:12px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.metrictile:nth-child(1) .mval{color:#0891b2}
+.metrictile:nth-child(2) .mval{color:#7c3aed}
+.metrictile:nth-child(3) .mval{color:#c2410c}
 .noteitem .meta{font-size:12px;color:var(--mut);margin-top:4px}
 
 /* ---------- forms / buttons ---------- */
@@ -378,7 +385,6 @@ function DEFAULT_MASTER(){ return {
     {id:'c19', task:'All Trail checks complete for the day', method:''}
   ],
   tempQuestion:'What temperature do the fridges have to be?',
-  bookings: {},
   bookingsSourceUrl: '',
 };}
 
@@ -454,12 +460,6 @@ if(ensureMasterDefaults()) lsSetLocal(KEY_MASTER,master);
     master.kitchenManagers=[{name:'Kitchen Manager', pin:master.pin}];
     lsSetLocal(KEY_MASTER,master);
   }
-})();
-(function pruneOldBookings(){
-  if(!master.bookings) return;
-  var cut=addDays(new Date(),-14), changed=false;
-  for(var k in master.bookings){ if(new Date(k)<cut){ delete master.bookings[k]; changed=true; } }
-  if(changed) lsSetLocal(KEY_MASTER,master);
 })();
 
 /* ---------------- who's logged in on this tablet ----------------
@@ -621,21 +621,6 @@ function deliverMessagesFor(name){
   showModal('Message'+(msgs.length>1?'s':'')+' for '+esc(name),body);
 }
 
-/* ---------------- bookings PDF upload ----------------
-   Deliberately not parsed — the uploaded PDF is stored as-is and shown
-   as-is, so there's nothing for a layout quirk to misread. */
-function handleBookingsUpload(file,dateVal){
-  var reader=new FileReader();
-  reader.onload=function(e){
-    master.bookings=master.bookings||{};
-    master.bookings[dateVal]={fileName:file.name,dataUrl:e.target.result,uploadedAt:stamp()};
-    saveMaster();
-    render();
-  };
-  reader.onerror=function(){ alert('Couldn\u2019t read that file — try again.'); };
-  reader.readAsDataURL(file);
-}
-
 /* ---------------- dates ---------------- */
 function pad(n){return n<10?'0'+n:''+n;}
 function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
@@ -728,19 +713,67 @@ function printSection(key){
   w.document.close();
   setTimeout(function(){ w.focus(); w.print(); },350);
 }
-function showBookingsModal(dISO){
-  var b=(master.bookings||{})[dISO];
-  if(!b||!b.dataUrl) return;
-  var liveLink='';
-  if(master.bookingsSourceUrl){
-    var base=master.bookingsSourceUrl.split('?')[0];
-    liveLink=' <a href="'+esc(base)+'?date='+esc(dISO)+'" target="_blank" rel="noopener">View the live run sheet \u2197</a>';
-  }
-  var body='<div class="banner info" style="margin:0 0 14px;white-space:normal">Not live \u2014 a PDF uploaded '+
-    esc(b.uploadedAt||'')+'. Bookings may have changed since.'+liveLink+'</div>'+
-    '<p class="small muted" style="margin:0 0 12px">'+esc(b.fileName||'Bookings PDF')+'</p>'+
-    '<div class="row"><a class="btn primary" href="'+esc(b.dataUrl)+'" target="_blank" rel="noopener">Open PDF</a></div>';
-  showModal('Bookings \u2014 '+shortDate(new Date(dISO)),body);
+function printWeekChecks(weekObj,masterObj,wkStart,label){
+  var pages='';
+  DK.forEach(function(dk,di){
+    var d=DAYS[di], dt=addDays(wkStart,di), st=weekObj.days[dk];
+    var wl=(masterObj.weekly||{})[dk]||[];
+
+    var mrows='<table><thead><tr><th>Task</th><th>Done</th><th>By</th><th>Time</th></tr></thead><tbody>';
+    (masterObj.morning||[]).forEach(function(mi){
+      var r=(st.morning||{})[mi.id]||{};
+      mrows+='<tr><td>'+esc(mi.task)+(mi.note?'<div class="sub">'+esc(mi.note)+'</div>':'')+'</td>'+
+        '<td>'+(r.done?'Yes':'No')+'</td><td>'+esc(r.ini||'')+'</td><td>'+esc(r.at||'')+'</td></tr>';
+    });
+    mrows+='</tbody></table>';
+
+    var wrows='<table><thead><tr><th>Task</th><th>Done</th><th>By</th><th>Time</th></tr></thead><tbody>';
+    if(!wl.length){ wrows+='<tr><td colspan="4" class="sub">No scheduled weekly job.</td></tr>'; }
+    wl.forEach(function(t,i){
+      var r=st.weekly[i]||{};
+      wrows+='<tr><td>'+esc(t.text)+(t.note?'<div class="sub">'+esc(t.note)+'</div>':'')+(t.trail?' <span class="flag">Trail</span>':'')+'</td>'+
+        '<td>'+(r.done?'Yes':'No')+'</td><td>'+esc(r.ini||'')+'</td><td>'+esc(r.at||'')+'</td></tr>';
+    });
+    wrows+='</tbody></table>';
+
+    var crows='<table><thead><tr><th>Task</th><th>Done</th><th>By</th><th>Time</th></tr></thead><tbody>';
+    (masterObj.closedown||[]).forEach(function(c){
+      var r=st.closedown[c.id]||{};
+      crows+='<tr><td>'+esc(c.task)+'</td><td>'+(r.done?'Yes':'No')+'</td><td>'+esc(r.ini||'')+'</td><td>'+esc(r.at||'')+'</td></tr>';
+    });
+    crows+='</tbody></table>';
+
+    pages+='<div class="daypage"><h1>'+esc(d.label)+'</h1><p class="meta">'+esc(shortDate(dt))+'</p>'+
+      '<h2>Morning cleaning</h2>'+mrows+
+      '<h2>Weekly cleaning</h2>'+wrows+
+      '<h2>Daily closedown</h2>'+crows+
+      '<p class="foot"><b>'+esc(masterObj.tempQuestion||'')+'</b> '+esc(st.temp||'\u2014')+'</p>'+
+      '<p class="foot">Closing chef: <b>'+esc(st.chef&&st.chef.ini||'\u2014')+'</b> '+esc(st.chef&&st.chef.at||'')+
+      ' &nbsp;&nbsp;&nbsp; Duty manager: <b>'+esc(st.dm&&st.dm.ini||'\u2014')+'</b> '+esc(st.dm&&st.dm.at||'')+'</p>'+
+      '</div>';
+  });
+  var w=window.open('','_blank');
+  if(!w){ alert('Please allow pop-ups for this site so the print page can open, then try again.'); return; }
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Weekly cleaning &amp; closedown \u2014 '+esc(label)+'</title><style>'+
+    'body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#111;padding:0}'+
+    '.daypage{padding:24px;page-break-after:always}'+
+    '.daypage:last-child{page-break-after:auto}'+
+    'h1{font-size:20px;margin:0 0 2px}'+
+    'h2{font-size:14px;margin:18px 0 6px;padding-top:10px;border-top:1px solid #ddd}'+
+    '.sub{color:#666;font-size:12px;margin-top:2px}'+
+    '.flag{background:#0e7490;color:#fff;font-size:10px;padding:2px 7px;border-radius:8px}'+
+    'p.meta{color:#555;margin:0 0 8px;font-size:13px}'+
+    'p.foot{font-size:13px;margin:8px 0 0}'+
+    'table{width:100%;border-collapse:collapse}th,td{padding:7px 9px;border-bottom:1px solid #ccc;text-align:left;font-size:13px;vertical-align:top}'+
+    'th{text-transform:uppercase;font-size:10.5px;color:#555;letter-spacing:.3px}'+
+    '</style></head><body>'+pages+'</body></html>');
+  w.document.close();
+  setTimeout(function(){ w.focus(); w.print(); },350);
+}
+function bookingsUrlFor(dISO){
+  if(!master.bookingsSourceUrl) return '';
+  var base=master.bookingsSourceUrl.split('?')[0];
+  return base+'?date='+dISO;
 }
 document.addEventListener('click',function(e){
   var t=e.target;
@@ -831,6 +864,15 @@ function renderDay(dk){
      '<button class="btn primary" data-act="addNotice">Post notice</button></div>'+
      '<p class="small muted" style="margin:8px 0 0">Kitchen or General Manager PIN needed to post or remove.</p></div></div>';
 
+  /* ---- KEY METRICS (mock-up) ---- */
+  h+='<div class="card noprint"><div class="sec-head"><h2>How are we doing?</h2><span class="prog">Work in progress</span></div><div class="pad">'+
+     '<p class="small muted" style="margin-top:0">Mock-up for feedback \u2014 these numbers are placeholders, not real data. May or may not end up working like this.</p>'+
+     '<div class="metrictiles">'+
+       '<div class="metrictile"><div class="mval">87%</div><div class="mlabel">KMS</div></div>'+
+       '<div class="metrictile"><div class="mval">62%</div><div class="mlabel">NPS</div></div>'+
+       '<div class="metrictile"><div class="mval">91%</div><div class="mlabel">Food Quality</div></div>'+
+     '</div></div></div>';
+
   /* ---- handover in ---- */
   if(prev && ((prev.notes&&prev.notes.length)||(prev.open&&prev.open.length))){
     h+='<div class="banner hand"><h3>Handover from '+esc(prev.label)+'</h3>';
@@ -854,11 +896,10 @@ function renderDay(dk){
   }
 
   /* ---- bookings ---- */
-  var bkToday=(master.bookings||{})[iso(dt)];
-  if(bkToday&&bkToday.dataUrl){
+  if(master.bookingsSourceUrl){
     h+='<div class="card noprint"><div class="pad row" style="justify-content:space-between;align-items:center">'+
-       '<div><b>Bookings for today</b><div class="small muted">'+esc(bkToday.fileName||'PDF uploaded')+'</div></div>'+
-       '<button class="btn primary" data-act="showBookings">Show today\u2019s bookings</button></div></div>';
+       '<div><b>Bookings</b><div class="small muted">Opens '+esc(d.label)+'\u2019s run sheet \u2014 log in there if asked</div></div>'+
+       '<a class="btn primary" href="'+esc(bookingsUrlFor(iso(dt)))+'" target="_blank" rel="noopener">Open '+esc(d.label)+'\u2019s bookings \u2197</a></div></div>';
   }
 
   /* ---- MORNING CLEANING ---- */
@@ -1126,25 +1167,11 @@ function renderMaster(){
   }
 
   /* bookings */
-  h+='<div class="card" id="msec-bookings" style="--sc:#b45309">'+masterJumpNav('bookings','inline')+'<div class="sec-head"><h2>Bookings</h2><span class="prog">Uploaded per date, as a PDF</span></div><div class="pad">'+
-     '<p class="small muted">Upload a run sheet PDF for a specific date — it\'s stored exactly as uploaded (nothing is read or parsed out of it, so nothing can be misread). A "Show today\'s bookings" button then appears on that date\'s day page, with a reminder that it\'s a snapshot, not live.</p>'+
-     '<div class="row"><input class="txt" data-m="bookingsUrl" value="'+esc(master.bookingsSourceUrl||'')+'" placeholder="Optional: paste the live run sheet link, e.g. from DesignMyNight" style="max-width:460px"></div>'+
-     '<div class="row" style="margin-top:14px;align-items:flex-end">'+
-     '<div><label class="small muted" style="display:block">Date this PDF is for</label><input class="txt" type="date" id="bkUploadDate" value="'+esc(iso(new Date()))+'"></div>'+
-     '<button type="button" class="btn primary" data-act="pickBookingsPdf">Choose PDF</button>'+
-     '<input type="file" accept="application/pdf" id="bookingsPdfInput" style="display:none"></div>';
-
-  h+='<div style="margin-top:16px">';
-  var bkDates=Object.keys(master.bookings||{}).sort();
-  if(!bkDates.length){ h+='<p class="muted small">No bookings uploaded yet.</p>'; }
-  bkDates.forEach(function(dISO){
-    var b=master.bookings[dISO];
-    h+='<div class="arow"><div><div class="n">'+esc(shortDate(new Date(dISO)))+'</div>'+
-       '<div class="small muted">'+esc(b.fileName||'PDF')+' &middot; uploaded '+esc(b.uploadedAt||'')+'</div></div>'+
-       '<div class="btns"><button class="btn sm" data-act="viewBookingsDate" data-id="'+esc(dISO)+'">Preview</button>'+
-       '<button class="btn sm danger" data-act="delBookingsDate" data-id="'+esc(dISO)+'">Remove</button></div></div>';
-  });
-  h+='</div></div></div>';
+  h+='<div class="card" id="msec-bookings" style="--sc:#b45309">'+masterJumpNav('bookings','inline')+'<div class="sec-head"><h2>Bookings</h2><span class="prog">Live link to your run sheet</span></div><div class="pad">'+
+     '<p class="small muted">Paste the base link to your booking system\'s run sheet (e.g. from DesignMyNight) — the part before the date, no <code>?date=</code> on the end needed. Each day\'s page then gets an "Open today\'s bookings" button that jumps straight to that day in a new tab. You\'ll need to log in there the first time, same as normal — this links straight to your live system rather than storing anything here.</p>'+
+     '<div class="row"><input class="txt" data-m="bookingsUrl" value="'+esc(master.bookingsSourceUrl||'')+'" placeholder="e.g. https://admin.designmynight.com/yourvenue/sites/xxxxx/run-sheet" style="max-width:520px"></div>'+
+     (master.bookingsSourceUrl?('<p class="small muted" style="margin-top:10px">Today\u2019s link would be: <a href="'+esc(bookingsUrlFor(iso(new Date())))+'" target="_blank" rel="noopener">'+esc(bookingsUrlFor(iso(new Date())))+'</a></p>'):'')+
+     '</div></div>';
 
   /* messages */
   if(full){
@@ -1197,7 +1224,8 @@ function renderRecords(){
   var h='<div class="card"><div class="sec-head"><h2>This week</h2></div><div class="pad">'+
     '<p>Week commencing <b>'+esc(shortDate(weekStart))+'</b>. Everything staff enter is saved on this tablet as they go.</p>'+
     '<div class="row"><button class="btn" data-act="dlWeekCsv">Download this week (CSV)</button>'+
-    '<button class="btn" data-act="dlWeekJson">Download this week (file)</button></div>'+
+    '<button class="btn" data-act="dlWeekJson">Download this week (file)</button>'+
+    '<button class="btn" data-act="printWeekChecksNow">Print cleaning &amp; closedown checks</button></div>'+
     '<div class="row" style="margin-top:16px"><button class="btn ok" data-act="endWeek">End week &amp; start a fresh one</button></div>'+
     '<p class="small muted" style="margin-top:8px">This files the week into the records below, carries Sunday\u2019s handover into next Monday, and opens a blank set of sheets. Master pars are kept.</p>'+
     '</div></div>';
@@ -1215,6 +1243,7 @@ function renderRecords(){
        '<div class="btns"><button class="btn sm" data-act="dlArcCsv" data-id="'+esc(a.weekKey)+'">CSV</button>'+
        '<button class="btn sm" data-act="dlArcJson" data-id="'+esc(a.weekKey)+'">File</button>'+
        '<button class="btn sm" data-act="viewArc" data-id="'+esc(a.weekKey)+'">Summary</button>'+
+       '<button class="btn sm" data-act="printWeekChecksArc" data-id="'+esc(a.weekKey)+'">Print cleaning &amp; closedown</button>'+
        '<button class="btn sm danger" data-act="restoreArc" data-id="'+esc(a.weekKey)+'">Restore as current week</button></div></div>';
   });
   h+='</div>';
@@ -1315,15 +1344,6 @@ el('view').addEventListener('change',function(e){
     if(!/^image\//.test(file.type)){ alert('Please choose a photo.'); return; }
     compressImageFile(file,function(dataUrl){ setItemImg(list,r,dataUrl); saveMaster(); render(); },
       function(){ alert('Could not read that photo — try a different one.'); });
-  }
-  if(t.id==='bookingsPdfInput'&&t.type==='file'){
-    var pf=t.files&&t.files[0]; if(!pf) return;
-    if(pf.type!=='application/pdf'){ alert('Please choose a PDF file.'); t.value=''; return; }
-    var dEl=el('bkUploadDate'), dateVal=dEl?dEl.value:'';
-    if(!dateVal){ alert('Pick the date this PDF is for first.'); t.value=''; return; }
-    if(pf.size>8*1024*1024){ alert('That PDF is quite large (over 8MB) — it may be slow to upload. A smaller export would work better if you have one.'); }
-    handleBookingsUpload(pf,dateVal);
-    t.value='';
   }
   if(t.id==='noticeImgInput'&&t.type==='file'){
     var nf=t.files&&t.files[0]; if(!nf) return;
@@ -1533,10 +1553,6 @@ el('view').addEventListener('click',function(e){
   else if(act==='signDm'){
     requireDm(function(name){ st.dm={ini:name,at:stamp()}; saveWeek(); render(); });
   }
-  else if(act==='showBookings'){
-    var di3=DK.indexOf(dk);
-    if(di3>=0) showBookingsModal(iso(addDays(weekStart,di3)));
-  }
   else if(act==='printSection'){ printSection(id); }
   else if(act==='toggleSection'){
     if(st){
@@ -1603,11 +1619,6 @@ el('view').addEventListener('click',function(e){
     if(master.generalManagers.length<=1 && !(master.kitchenManagers&&master.kitchenManagers.length)){ alert('Keep at least one Kitchen or General Manager, or you\u2019ll lock everyone out of Master.'); return; }
     if(confirm('Remove '+master.generalManagers[id].name+' from general managers?')){ master.generalManagers.splice(id,1); saveMaster(); render(); }
   }
-  else if(act==='pickBookingsPdf'){ var fi=el('bookingsPdfInput'); if(fi) fi.click(); }
-  else if(act==='viewBookingsDate'){ showBookingsModal(id); }
-  else if(act==='delBookingsDate'){
-    if(confirm('Remove the saved bookings for '+shortDate(new Date(id))+'?')){ delete master.bookings[id]; saveMaster(); render(); }
-  }
   else if(act==='sendMessage'){
     var toSel=el('msgTo'), msgTxt=el('msgText');
     if(!toSel||!toSel.value){ alert('Pick who this message is for.'); return; }
@@ -1645,6 +1656,11 @@ el('view').addEventListener('click',function(e){
   else if(act==='dlArcJson'){ var a2=lsGet(KEY_ARC+id,null); if(a2) dl('kitchen-week-'+id+'.json', JSON.stringify(a2,null,2), 'application/json'); }
   else if(act==='viewArc'){ var a3=lsGet(KEY_ARC+id,null); if(a3) showModal('Week commencing '+id, arcSummary(a3)); }
   else if(act==='restoreArc'){ restoreWeek(id); }
+  else if(act==='printWeekChecksNow'){ printWeekChecks(week,master,weekStart,weekKey); }
+  else if(act==='printWeekChecksArc'){
+    var arcRec=lsGet(KEY_ARC+id,null);
+    if(arcRec) printWeekChecks(arcRec.week,arcRec.master,new Date(id),id);
+  }
   else if(act==='dlAll'){
     var out={exported:stamp(),master:master,current:week,archives:{}};
     lsGet(KEY_IDX,[]).forEach(function(a){ out.archives[a.weekKey]=lsGet(KEY_ARC+a.weekKey,null); });
