@@ -1,0 +1,1821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kitchen Week">
+<meta name="theme-color" content="#181b21">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Kitchen Week — Defrost, Prep &amp; Cleaning</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f1f2f5; --card:#ffffff; --ink:#15171c; --mut:#666b76; --line:#dde1e8;
+  --brand:#181b21; --accent:#252a34; --accent2:#3a4152; --ok:#0f7a4d; --okbg:#e6f6ee;
+  --warn:#b0570d; --warnbg:#fdf2e1; --bad:#c0342a; --badbg:#fceded;
+  --tap:48px; --radius:14px; --radius-sm:10px;
+  --shadow:0 1px 2px rgba(20,22,28,.05), 0 10px 24px -14px rgba(20,22,28,.22);
+  --font-display:'Space Grotesk',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-body:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{
+  background:var(--bg); color:var(--ink);
+  font:16px/1.48 var(--font-body);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  padding-bottom:120px;
+}
+h1,h2,h3,.btn,.tab,.jumpchip,.sec-head h2,table.grid th,.daytitle h2,.mh,.n{font-family:var(--font-display);letter-spacing:-.01em}
+input,select,textarea,button{font-family:inherit;font-size:16px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 12px}
+
+/* ---------- header ---------- */
+header.app{background:var(--brand);color:#fff;padding:10px 0 0;position:sticky;top:0;z-index:40;box-shadow:0 4px 18px rgba(0,0,0,.24)}
+.hrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.hrow h1{font-size:19px;margin:0;font-weight:700;letter-spacing:-.01em}
+.wk{font-size:13px;opacity:.75;margin-left:auto;text-align:right;font-family:var(--font-body)}
+.wk b{opacity:1}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:10px 0 8px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{
+  flex:0 0 auto;min-height:40px;padding:8px 15px;border-radius:999px;border:1px solid rgba(255,255,255,.24);
+  background:rgba(255,255,255,.07);color:#fff;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap;
+  transition:background .15s,color .15s,border-color .15s;
+}
+.tab.active{background:#fff;color:var(--brand);border-color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.tab.today::after{content:" •";color:#7dd3fc;font-weight:900}
+.tab.active.today::after{color:#2f6fd6}
+.tab.done{border-color:#4ade80}
+
+/* ---------- cards ---------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);margin:14px 0;overflow:hidden;box-shadow:var(--shadow)}
+.card[id^="sec-"]{border-left:5px solid var(--sc,var(--line))}
+.card[id^="sec-"] .sec-head h2::before{content:'';display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--sc,var(--line));margin-right:9px;vertical-align:middle}
+.card[id^="msec-"]{border-left:5px solid var(--sc,var(--line))}
+.card[id^="msec-"] .sec-head h2::before{content:'';display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--sc,var(--line));margin-right:9px;vertical-align:middle}
+html{scroll-behavior:smooth}
+.jumpnav{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 4px;margin:12px 0 0;-webkit-overflow-scrolling:touch}
+.jumpnav.top{margin-top:0}
+.jumpchip{flex:0 0 auto;font-size:13px;font-weight:600;text-decoration:none;border:1px solid;border-radius:999px;padding:7px 14px;white-space:nowrap;transition:transform .1s}
+.jumpchip:active{transform:scale(.96)}
+.jumpnav.inline{margin:0 0 2px;padding:10px 14px 0}
+.jumpnav.inline .jumpchip{font-size:12px;padding:5px 11px}
+.sec-head{display:flex;align-items:center;gap:10px;padding:13px 15px;border-bottom:1px solid var(--line);background:#fbfbfc;flex-wrap:wrap}
+.sec-body.closed{display:none}
+.sec-toggle{background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--mut)}
+.sec-head h2{margin:0;font-size:16.5px;font-weight:700}
+.prog{margin-left:auto;font-size:13px;color:var(--mut);font-weight:600;font-family:var(--font-body)}
+.pad{padding:13px 15px}
+.daytitle{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:16px 0 4px}
+.daytitle h2{margin:0;font-size:25px;font-weight:700}
+.daytitle .dt{color:var(--mut);font-size:14px;font-family:var(--font-body)}
+
+/* ---------- day dot ---------- */
+.dotbar{display:flex;align-items:center;gap:10px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:var(--radius-sm);padding:10px 12px;margin:10px 0}
+.dot{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:15px}
+.dot i{width:20px;height:20px;border-radius:50%;display:inline-block;border:2px solid rgba(0,0,0,.18)}
+
+/* ---------- tables ---------- */
+.tblwrap{overflow-x:auto}
+table.grid{width:100%;border-collapse:collapse;min-width:640px}
+table.grid th,table.grid td{padding:9px 8px;border-bottom:1px solid #eceff3;text-align:left;vertical-align:middle}
+table.grid th{font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;color:var(--mut);background:#fafbfc;position:sticky;top:0}
+table.grid tbody tr:hover{background:#fafbfd}
+table.grid tr.spacer td{height:8px;background:#f7f8fa;border-bottom:1px solid var(--line);padding:0}
+td.item{font-weight:600;min-width:170px}
+.info{display:inline-block;margin-left:6px;width:22px;height:22px;line-height:20px;text-align:center;border-radius:50%;background:#eaedf5;color:var(--accent2);font-weight:800;font-size:13px;cursor:pointer;vertical-align:middle;font-family:var(--font-display)}
+td.uom{color:var(--mut);font-size:13px;white-space:nowrap}
+td.lvl{font-weight:700;text-align:center;background:#fafbfc;width:74px}
+input.num{width:66px;height:var(--tap);text-align:center;border:1px solid var(--line);border-radius:var(--radius-sm);background:#fff;font-weight:600;font-size:17px;transition:border-color .15s,box-shadow .15s}
+input.num:focus{outline:none;border-color:var(--accent2);box-shadow:0 0 0 3px rgba(58,65,82,.15)}
+td.calc{font-weight:800;text-align:center;font-size:18px;width:110px}
+.pill{display:inline-block;padding:4px 11px;border-radius:999px;font-size:14px;font-weight:700}
+.pill.need{background:var(--okbg);color:var(--ok)}
+.pill.zero{background:#eef1f5;color:var(--mut)}
+.pill.over{background:var(--warnbg);color:var(--warn)}
+.pill.trail{background:#0e7490;color:#fff;font-size:11px;padding:3px 9px;margin-left:8px;vertical-align:middle;font-family:var(--font-body)}
+.rownote{display:block;font-weight:500;font-size:12px;color:var(--warn);margin-top:2px}
+
+/* ---------- checkboxes ---------- */
+.chk{width:28px;height:28px;accent-color:var(--ok)}
+td.tick{text-align:center;width:56px}
+.ini{width:78px;height:42px;text-align:center;text-transform:uppercase;border:1px solid var(--line);border-radius:var(--radius-sm);font-weight:700}
+.stampbox{min-width:90px;text-align:right;flex:0 0 auto}
+.stampbox b{display:block;font-size:13px;color:var(--ok);font-family:var(--font-display)}
+.stampbox .stamp{display:block;font-size:11px;color:var(--mut);font-weight:600}
+.task{display:flex;gap:12px;align-items:flex-start;padding:13px 15px;border-bottom:1px solid #eceff3;transition:background .15s}
+.task:last-child{border-bottom:0}
+.task.done{background:var(--okbg)}
+.task .body{flex:1;min-width:0}
+.task .t{font-weight:600}
+.task .m{font-size:13px;color:var(--mut);margin-top:2px}
+.task .note{font-size:13px;color:var(--warn);margin-top:4px}
+.task input[type=checkbox]{margin-top:2px}
+
+/* ---------- banners ---------- */
+.banner{border-radius:var(--radius-sm);padding:13px 15px;margin:12px 0;border:1px solid}
+.banner.hand{background:#fffbeb;border-color:#fcd34d}
+.banner.info{background:#eff5ff;border-color:#bcd1f5}
+.banner.good{background:var(--okbg);border-color:#8bd4ae}
+.banner.warn{background:var(--badbg);border-color:#f2b3ac}
+.banner h3{margin:0 0 6px;font-size:15px}
+.banner ul{margin:6px 0 0;padding-left:20px}
+.banner li{margin:3px 0}
+.noteitem{background:#fff;border:1px solid #fcd34d;border-radius:var(--radius-sm);padding:9px 11px;margin:6px 0}
+.noteitem .meta{font-size:12px;color:var(--mut);margin-top:4px}
+
+/* ---------- forms / buttons ---------- */
+textarea{width:100%;min-height:88px;border:1px solid var(--line);border-radius:var(--radius-sm);padding:11px;resize:vertical;transition:border-color .15s,box-shadow .15s}
+input.txt{height:var(--tap);border:1px solid var(--line);border-radius:var(--radius-sm);padding:0 12px;width:100%;max-width:260px;transition:border-color .15s,box-shadow .15s}
+input.txt:focus,textarea:focus{outline:none;border-color:var(--accent2);box-shadow:0 0 0 3px rgba(58,65,82,.15)}
+.btn{min-height:var(--tap);padding:10px 17px;border-radius:var(--radius-sm);border:1px solid var(--line);background:#fff;font-weight:600;cursor:pointer;transition:transform .08s,box-shadow .15s,background .15s}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 2px 8px -2px rgba(37,42,52,.5)}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff;box-shadow:0 2px 8px -2px rgba(15,122,77,.45)}
+.btn.danger{background:#fff;border-color:#f0b8b2;color:var(--bad)}
+.btn.sm{min-height:38px;padding:6px 13px;font-size:14px}
+.btn:disabled{opacity:.5}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.signrow{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;padding:13px 15px;border-top:1px solid var(--line);background:#fbfbfc}
+.signrow label{display:block;font-size:11.5px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.stamp{font-size:12px;color:var(--ok);font-weight:700}
+.muted{color:var(--mut)}
+.small{font-size:13px}
+.locked{background:#f3f4f6}
+
+/* ---------- modal ---------- */
+.mbg{position:fixed;inset:0;background:rgba(15,17,22,.6);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;padding:16px;z-index:80}
+.mbox{background:#fff;border-radius:16px;max-width:520px;width:100%;max-height:82vh;overflow:auto;box-shadow:0 24px 60px -20px rgba(0,0,0,.4)}
+.mbox .mh{padding:15px;border-bottom:1px solid var(--line);font-weight:700;font-family:var(--font-display)}
+.mbox .mb{padding:15px;white-space:pre-wrap}
+.mbox .mf{padding:12px 15px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end}
+.hide{display:none!important}
+
+/* ---------- user bar ---------- */
+.userbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 0 10px;font-size:13px;color:#fff;opacity:.95}
+.userbar b{opacity:1}
+.userbar button{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:999px;padding:7px 13px;font-weight:600;font-size:12px;min-height:32px}
+.loginnames{display:flex;gap:8px;flex-wrap:wrap}
+.loginnames button{min-width:110px;min-height:44px}
+
+/* ---------- archive ---------- */
+.arow{display:flex;gap:10px;align-items:center;padding:13px 15px;border-bottom:1px solid #eceff3;flex-wrap:wrap}
+.arow .n{font-weight:700}
+.arow .btns{margin-left:auto;display:flex;gap:8px}
+
+@media print{
+  header.app,.tabs,.noprint{display:none!important}
+  body{background:#fff;padding:0}
+  .card{break-inside:avoid;border-color:#999}
+  input.num,.ini{border-color:#999}
+  .jumpnav{display:none!important}
+}
+</style>
+</head>
+<body>
+<header class="app">
+  <div class="wrap">
+    <div class="hrow">
+      <h1>Kitchen Week</h1>
+      <div class="wk" id="weeklabel"></div>
+      <div class="wk" id="syncBadge" style="margin-left:12px;opacity:.85"></div>
+    </div>
+    <div class="tabs" id="tabs"></div>
+    <div class="userbar noprint" id="userBar"></div>
+  </div>
+</header>
+<main class="wrap" id="view"></main>
+<div id="modal"></div>
+<script>
+/* =====================================================================
+   Kitchen Week — single-file app
+   Defrost / Prep / Cleaning sheets, master par table, handover notes,
+   weekly archive with download. All data stored on this device.
+   ===================================================================== */
+
+var DAYS = [
+  {k:'mon', label:'Monday',    short:'Mon', colour:'#2563eb', name:'Blue'},
+  {k:'tue', label:'Tuesday',   short:'Tue', colour:'#eab308', name:'Yellow'},
+  {k:'wed', label:'Wednesday', short:'Wed', colour:'#dc2626', name:'Red'},
+  {k:'thu', label:'Thursday',  short:'Thu', colour:'#92400e', name:'Brown'},
+  {k:'fri', label:'Friday',    short:'Fri', colour:'#16a34a', name:'Green'},
+  {k:'sat', label:'Saturday',  short:'Sat', colour:'#ea580c', name:'Orange'},
+  {k:'sun', label:'Sunday',    short:'Sun', colour:'#111827', name:'Black'}
+];
+var DK = DAYS.map(function(d){return d.k;});
+
+var SECTIONS = [
+  {key:'morning',   label:'Morning cleaning', short:'Morning',   color:'#c2410c', bg:'#fdece3', bd:'#f3b58e'},
+  {key:'prep',      label:'Prep',             short:'Prep',      color:'#0891b2', bg:'#e1f4f8', bd:'#94d3e0'},
+  {key:'weekly',    label:'Weekly cleaning',  short:'Weekly',    color:'#7c3aed', bg:'#f0eafd', bd:'#c8b3f6'},
+  {key:'defrost',   label:'Defrost',          short:'Defrost',   color:'#2563eb', bg:'#e7edfd', bd:'#a9bdf5'},
+  {key:'closedown', label:'Daily closedown',  short:'Closedown', color:'#be123c', bg:'#fbe6ec', bd:'#eda3b7'}
+];
+function toggleBtn(key,open){
+  return '<button type="button" class="btn sm noprint sec-toggle" style="margin-left:auto" data-act="toggleSection" data-id="'+key+'">'+(open?'\u25be Hide':'\u25b8 Show')+'</button>';
+}
+function jumpNav(current,cls){
+  var h='<nav class="jumpnav'+(cls?' '+cls:'')+'">';
+  SECTIONS.forEach(function(s){
+    h+='<a href="#sec-'+s.key+'" class="jumpchip'+(s.key===current?' current':'')+'" style="color:'+(s.key===current?'#fff':s.color)+';background:'+(s.key===current?s.color:s.bg)+';border-color:'+(s.key===current?s.color:s.bd)+'">'+esc(s.short)+'</a>';
+  });
+  h+='</nav>';
+  return h;
+}
+var MASTER_SECTIONS = [
+  {key:'morning',  label:'Morning',  color:'#c2410c', bg:'#fdece3', bd:'#f3b58e', full:true},
+  {key:'defrost',  label:'Defrost',  color:'#2563eb', bg:'#e7edfd', bd:'#a9bdf5', full:true},
+  {key:'prep',     label:'Prep',     color:'#0891b2', bg:'#e1f4f8', bd:'#94d3e0', full:true},
+  {key:'weekly',   label:'Weekly',   color:'#7c3aed', bg:'#f0eafd', bd:'#c8b3f6', full:true},
+  {key:'closedown',label:'Closedown',color:'#be123c', bg:'#fbe6ec', bd:'#eda3b7', full:true},
+  {key:'km',       label:'Kitchen Mgrs',color:'#9333ea',bg:'#f3e8fd',bd:'#d8b4f8', full:true},
+  {key:'gm',       label:'General Mgrs',color:'#9333ea',bg:'#f3e8fd',bd:'#d8b4f8', full:true},
+  {key:'staff',    label:'Staff',    color:'#0f766e', bg:'#e6f5f3', bd:'#8fd0c6', full:false},
+  {key:'dm',       label:'Duty Mgrs',color:'#0f766e', bg:'#e6f5f3', bd:'#8fd0c6', full:true},
+  {key:'bookings', label:'Bookings', color:'#b45309', bg:'#fef3e2', bd:'#f3c987', full:false},
+  {key:'msg',      label:'Messages', color:'#0e7490', bg:'#e3f4f8', bd:'#a9dbe8', full:true},
+  {key:'settings', label:'Settings', color:'#334155', bg:'#eef1f5', bd:'#c7cfd9', full:true}
+];
+function masterJumpNav(current,cls){
+  var h='<nav class="jumpnav'+(cls?' '+cls:'')+'">';
+  MASTER_SECTIONS.forEach(function(s){
+    if(s.full && ui.adminLevel!=='full') return;
+    h+='<a href="#msec-'+s.key+'" class="jumpchip'+(s.key===current?' current':'')+'" style="color:'+(s.key===current?'#fff':s.color)+';background:'+(s.key===current?s.color:s.bg)+';border-color:'+(s.key===current?s.color:s.bd)+'">'+esc(s.label)+'</a>';
+  });
+  h+='</nav>';
+  return h;
+}
+
+/* ---------------- default master data ---------------- */
+/* levels / targets are [Mon,Tue,Wed,Thu,Fri,Sat,Sun] */
+function DEFAULT_MASTER(){ return {
+  pin: '1234',
+  kitchenManagers: [{name:'Kitchen Manager', pin:'1234'}],
+  generalManagers: [],
+  messages: [],
+  notices: [],
+  users: [],
+  dutyManagers: [],
+  morningNote: 'Complete before service. Fryers filtered job changes by day — check the day column.',
+  morning: [
+    {id:'m01', task:'Chargrill', method:'Bars flipped and lowered, surround cleaned, bars put back up'},
+    {id:'m02', task:'Meal streams', method:'Spray with oven cleaner, scourer, wipe, rinse'},
+    {id:'m03', task:'Canopy', method:'Right hand filters through the dishwasher',
+      detail:'Area above and around the chargrill cleaned.', note:'Monday: all filters go through the dishwasher.'},
+    {id:'m04', task:'Fryers filtered', byDay:['All','Chip fryer + right meat fryer','All','Veg fryer + left meat fryer','All','All','All'],
+      note:'Veg fryer — wedge the oil basket in with scissors or it will slide out.'}
+  ],
+  defrostNote: 'You must check what is in the whole kitchen, including prepped items.',
+  defrost: [
+    {id:'haddock',   name:'Haddock',        uom:'each',             lv:[6,6,8,8,8,8,6]},
+    {id:'fries',     name:'Fries',          uom:'bags',             lv:[3,3,3,4,4,4,3]},
+    {id:'chknbrst',  name:'Chicken Breast', uom:'each',             lv:[10,10,10,15,15,15,10]},
+    {id:'sausage',   name:'Sausage',        uom:'each',             lv:[8,8,8,12,12,12,8]},
+    {id:'stbacon',   name:'Streaky Bacon',  uom:'packs',            lv:[2,2,3,3,3,3,2]},
+    {id:'porkribs',  name:'Pork Ribs',      uom:'each',             lv:[2,2,2,2,2,2,2]},
+    {id:'burgers',   name:'Burgers',        uom:'1/3 100mm gastro', lv:[1,1,1,3,3,3,1]},
+    {id:'muffins',   name:'Muffins',        uom:'packs',            lv:[0.5,0.5,0.5,0.5,1,1,0.5], br:true},
+    {id:'bbuns',     name:'Burger Buns',    uom:'packs',            lv:[2,2,2,3,3,3,2]},
+    {id:'chknburg',  name:'Chicken Burger', uom:'bags',             lv:[1,1,2,2,2,2,1]},
+    {id:'macnchee',  name:'Mac n Cheese',   uom:'each',             lv:[4,4,4,5,5,5,4]},
+    {id:'wraps',     name:'Wraps',          uom:'packs',            lv:[0.5,0.5,0.5,0.5,0.5,0.5,0.5], br:true},
+    {id:'yucatan',   name:'Yucatan Chicken',uom:'each',             lv:[1,1,2,2,2,2,1]},
+    {id:'wings',     name:'Wings',          uom:'bags',             lv:[1,1,1,1,2,2,1]},
+    {id:'foccacia',  name:'Rosemary Foccacia', uom:'packs',         lv:[1,1,1,1,2,2,1]},
+    {id:'slowtoms',  name:'Slow Roast Toms',uom:'1/9 gastro',       lv:[0.5,0.5,0.5,0.5,1,1,0.5]},
+    {id:'onions',    name:'Onions',         uom:'1/9 gastro',       lv:[0.5,0.5,0.5,1,1,1,0.5]},
+    {id:'avocado',   name:'Avocado',        uom:'bags',             lv:[2,2,2,2,3,3,2]},
+    {id:'gfbrownie', name:'GF Brownie',     uom:'each',             lv:[2,2,2,2,3,3,2]},
+    {id:'bagels',    name:'Bagels',         uom:'each',             lv:[6,6,6,6,8,8,6]},
+    {id:'flatbread', name:'Flatbreads',     uom:'packs',            lv:[2,2,2,2,2,2,2]},
+    {id:'quesatac',  name:'Quesadilla Corn Tacos', uom:'packs',     lv:[1,1,1,1,1,1,1],
+      note:'1 pack tortillas = 6 portions of quesadillas.'},
+    {id:'tandoori',  name:'Tandoori Chicken', uom:'packs',          lv:[1.5,1.5,1.5,1.5,2,2,1.5]}
+  ],
+  prep: [
+    {id:'goujons',  name:'Fish Goujons',        uom:'fish',      detail:'1 fish into 8.', tg:[2,2,2,2,2,2,2]},
+    {id:'bkbacon',  name:'Back Bacon (Brunch)', uom:'packs',     tg:[1,1,1,1,2,3,1]},
+    {id:'stbaconp', name:'Streaky Bacon',       uom:'packs',     tg:[2,2,2,2,3,3,2]},
+    {id:'skewers',  name:'Chicken Skewers',     uom:'each',      tg:[20,20,20,30,30,40,20]},
+    {id:'mozsticks',name:'Mozzarella Sticks',   uom:'1/3 gastro',tg:[1,1,1,2,2,2,1]},
+    {id:'crollroll',name:'Croll Rolls',         uom:'each',      tg:[4,4,4,4,4,12,4]},
+    {id:'cucmoon',  name:'Cucumber (Half Moons)', uom:'cucumber',tg:[1,1,1,1,1,1,1]},
+    {id:'cucribbon',name:'Cucumber (Ribbons)',  uom:'cucumber',  tg:[1,1,1,1,2,2,2]},
+    {id:'fajpasta', name:'Fajita Pasta (Chicken)', uom:'portions', tg:[4,4,4,4,8,10,4]},
+    {id:'yucprep',  name:'Yucatan Chicken',     uom:'bags',      detail:'Chop up portion to 60g. Pasta = 2 x 60g. Everything else = 1 x 60g.', tg:[1,1,1,2,2,3,1]},
+    {id:'focprep',  name:'Focaccia (1/3)',      uom:'packs',     tg:[1,1,1,1,1,1,1]},
+    {id:'quesadilla',name:'Quesadilla',         uom:'portions',  detail:'60g grated mozzarella / 30g tomato salsa / 6g jalapenos.', tg:[2,2,2,2,6,10,4]},
+    {id:'iceberg',  name:'Iceberg Lettuce',     uom:'each',      tg:[2,2,2,2,3,3,2]},
+    {id:'lemonw',   name:'Lemon Wedges (no pips)', uom:'each',   tg:[3,3,3,3,3,6,3]},
+    {id:'limew',    name:'Lime Wedges (no pips)',  uom:'each',   tg:[2,1,2,2,2,2,2]},
+    {id:'littlegem',name:'Little Gem',          uom:'each',      tg:[2,2,2,2,3,6,2]},
+    {id:'ongherk',  name:'Onion / Gherkin Mix', uom:'1/9 gastro',detail:'50/50 mix.', tg:[1,1,1,1,2,3,2]},
+    {id:'pico',     name:'Pico de Gallo',       uom:'recipe',    detail:'6 tomatoes / 1 onion / 15g coriander / 2g salt / 45g lime juice.', tg:[1,1,1,1,2,3,1]},
+    {id:'avosmash', name:'Avo Pico Smash',      uom:'recipe',    detail:'4 avocado halves / 40g pico de gallo.', tg:[2,1,2,2,3,6,2]},
+    {id:'tomhalves',name:'Tomato Halves (Brunch)', uom:'each',   tg:[4,4,4,4,4,10,6]},
+    {id:'redchilli',name:'Red Chillies (sliced)', uom:'each',    tg:[4,4,4,4,6,6,4]},
+    {id:'mangoslaw',name:'Mango Slaw',          uom:'1/9 gastro',detail:'150g slaw mix / 25g mango chutney / half a lime juiced.', tg:[0.75,0.75,0.75,0.75,0.75,3,0.75]},
+    {id:'pickslaw', name:'Pickled Slaw',        uom:'1/9 gastro',detail:'150g slaw mix / 45g pickled onions.', tg:[0.75,0.75,0.75,0.75,0.75,2,0.75]},
+    {id:'sponion',  name:'Spring Onion Curls',  uom:'bunches',   tg:[3,3,3,3,4,7,3]},
+    {id:'tostadas', name:'Tostadas',            uom:'portions',  detail:'Portions of 3.', tg:[3,3,3,3,4,5,3]},
+    {id:'tartare',  name:'Tartare',             uom:'lrg btl',   detail:'800g mayo / 250g capers / 250g diced gherkin / 1 lemon juiced.', tg:[1,1,1,2,2,2,1]},
+    {id:'misomayo', name:'Miso Mayo',           uom:'lrg btl',   detail:'Batch: 80g miso broth base / 800g vegan mayo / 20g lemon juice.', tg:[2,2,2,3,3,3,2]},
+    {id:'vmketch',  name:'Virgin Mary Ketchup', uom:'sml btl',   detail:'1 small bottle = 1 bottle ketchup + three quarters bottle tabasco.', tg:[1,1,1,1,2,2,1]},
+    {id:'lgmayo',   name:'Lemongrass Mayo',     uom:'sml btl',   detail:'1 small bottle = 400g vegan mayo + 200g lemongrass paste.', tg:[1,1,1,1,1,2,1]},
+    {id:'mintmayo', name:'Vegan Mint Mayo',     uom:'sml btl',   detail:'1 small bottle = 400g vegan mayo + 80g mint sauce.', tg:[1,1,1,1,2,2,1]},
+    {id:'currymayo',name:'Curried Mayo',        uom:'sml btl',   detail:'1 small bottle = 400g vegan mayo + 40g masala paste.', tg:[1,1,1,1,2,2,1]},
+    {id:'spicymar', name:'Spicy Marinara',      uom:'sml btl',   detail:'1 small bottle = 4 x marinara sauce + 80g peri peri.', tg:[1,1,1,1,2,2,1]},
+    {id:'burgchee', name:'Burger Cheese Sauce', uom:'trays',     detail:'25g portions.', tg:[1,1,1,2,2,3,1]},
+    {id:'nachochee',name:'Nacho Cheese',        uom:'portions',  detail:'100g portions.', tg:[6,6,6,6,10,10,6]},
+    {id:'beans',    name:'Baked Beans',         uom:'cans',      detail:'1 can is 4 portions.', tg:[1,1,1,1,1,3,1]},
+    {id:'mushypeas',name:'Mushy Peas',          uom:'cans',      detail:'1 can is 8 portions.', tg:[1,1,1,1,1,1,1]},
+    {id:'frozenpor',name:'Frozen Portioning',   uom:'fill the tubs', task:true,
+      detail:'Duck, chicken, squid, half katsus. Top up the tubs.', tg:[0,0,0,0,0,0,0]}
+  ],
+  weekly: {
+    mon:[{text:'Pull out 1, 2, 4, 10, 15-19 and hot cupboard. Sweep, mop, clean walls.',note:''},{text:'Clean hot side ceilings and walls.',note:''}],
+    tue:[{text:'Pull out 5, 7, 9, 18, 20-22.',note:''},{text:'Cold side ceilings and walls.',note:''}],
+    wed:[{text:'Walk-in floor, shelves and walls.',note:''},{text:'Clean wheels and legs of equipment.',note:''},{text:'Low level shelves.',note:''}],
+    thu:[{text:'Deep clean potwash area.',note:''},{text:'Pull out fridge 1 drawers, clean, and clean cavity.',note:''}],
+    fri:[{text:'Pull out meat drawers, clean, and clean cavity.',note:''},{text:'Gas oven.',note:''}],
+    sat:[],
+    sun:[{text:'Under microwaves.',note:''},{text:'Clean blue roll and soap dispensers.',note:''},{text:'Pull out fridge 2 drawers, clean, and clean cavity.',note:''}]
+  },
+  weeklyFooter:'Sign off on Trail as well. This is not an exhaustive list — if you see something dirty, please clean it.',
+  closedown: [
+    {id:'c01', task:'Hand wash & food prep sinks', method:'Clean & Sanitise', detail:'Taps, bowl, plugs, dispensers.'},
+    {id:'c02', task:'Cooking & frying equipment', method:'Clean & Degrease'},
+    {id:'c03', task:'All hand contact points', method:'Clean & Sanitise',
+      detail:'Handles of ovens, microwaves, fridge handles, door push plates etc.',
+      note:'The kitchen exit door push plate (the big piece of metal) and the KMS buttons frequently get missed. Please make sure they are cleaned.'},
+    {id:'c04', task:'Gantry / hot lights', method:'Clean & Degrease'},
+    {id:'c05', task:'Prep benches & top of chest freezers', method:'Clean & Sanitise'},
+    {id:'c06', task:'Grease trap', method:'Empty food filter and grease drip tray'},
+    {id:'c07', task:'Fridges & freezers', method:'Clean & Sanitise', detail:'Including handles, seals, bottoms, and wipe drawers out.'},
+    {id:'c08', task:'Weekly cleaning job completed', method:'See the weekly cleaning section above'},
+    {id:'c09', task:'Salamander drip tray', method:'Clean & Degrease', detail:'The tray on the wall grill.'},
+    {id:'c10', task:'Dishwasher', method:'Clean & Degrease', detail:'Lip round hood, filters, arms.'},
+    {id:'c11', task:'Waste bins and the areas around them', method:'Clean & Rebag'},
+    {id:'c12', task:'Fridge drawers and seals', method:'Clean & Sanitise'},
+    {id:'c13', task:'Defrost completed', method:'See the defrost section above'},
+    {id:'c14', task:'Probes left clean, cling film dispensers through the dishwasher', method:'Clean & Sanitise'},
+    {id:'c15', task:'Sweep & mop, including under equipment', method:'Clean & Degrease'},
+    {id:'c16', task:'Hob cleaned, pan supports through the dishwasher', method:'Degrease'},
+    {id:'c17', task:'Line fridges and freezers restocked, no gaps left', method:''},
+    {id:'c18', task:'Everything in its place — bins, gastros, cleaning equipment etc.', method:''},
+    {id:'c19', task:'All Trail checks complete for the day', method:''}
+  ],
+  tempQuestion:'What temperature do the fridges have to be?',
+  bookings: {},
+  bookingsSourceUrl: '',
+};}
+
+/* ---------------- storage ---------------- */
+var KEY_MASTER='kw.master', KEY_WEEK='kw.week.', KEY_IDX='kw.archive.index', KEY_ARC='kw.archive.', KEY_CARRY='kw.carry';
+var RETAIN_DAYS=400;
+
+/* ---- shared sync (Netlify Function + Blobs) ----
+   localStorage stays the fast, always-available cache that every read in this
+   app uses. On top of it, every write is also pushed to the shared API, and on
+   startup we pull the latest copy from the API so this device picks up
+   whatever other devices have saved. If the API can't be reached (wifi down,
+   not deployed on Netlify, etc.) the app just carries on working from the
+   local cache, same as before. */
+var API_BASE = '/api/data';
+var SITE_KEY = localStorage.getItem('kw.sitekey') || '';
+var syncState = 'idle'; /* idle | syncing | synced | offline */
+
+function apiHeaders(){ var h={'Content-Type':'application/json'}; if(SITE_KEY) h['x-site-key']=SITE_KEY; return h; }
+function setSyncState(s){ syncState=s; var b=document.getElementById('syncBadge'); if(b) b.textContent=syncLabel(); }
+function syncLabel(){
+  if(syncState==='syncing') return 'Syncing…';
+  if(syncState==='synced') return 'Synced just now';
+  if(syncState==='offline') return 'Saved on this device only';
+  return '';
+}
+function apiSet(key,value){
+  setSyncState('syncing');
+  return fetch(API_BASE,{method:'POST',headers:apiHeaders(),body:JSON.stringify({key:key,value:value})})
+    .then(function(r){ setSyncState(r.ok?'synced':'offline'); return r.ok; })
+    .catch(function(){ setSyncState('offline'); return false; });
+}
+function apiGet(key){
+  return fetch(API_BASE+'?key='+encodeURIComponent(key),{headers:apiHeaders()})
+    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .then(function(d){ return d.value===undefined?null:d.value; })
+    .catch(function(){ return undefined; }); /* undefined = could not reach the server, distinct from null = not saved yet */
+}
+function apiList(prefix){
+  return fetch(API_BASE+'?prefix='+encodeURIComponent(prefix||''),{headers:apiHeaders()})
+    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .then(function(d){ return d.keys||[]; })
+    .catch(function(){ return null; });
+}
+function apiDelete(key){ return fetch(API_BASE,{method:'POST',headers:apiHeaders(),body:JSON.stringify({key:key,action:'delete'})}).catch(function(){}); }
+
+function lsGet(k,fb){ try{var v=localStorage.getItem(k); return v?JSON.parse(v):fb;}catch(e){return fb;} }
+function lsSetLocal(k,v){ try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){alert('Could not save — device storage may be full. Archive and download an old week to free space.');return false;} }
+function lsSet(k,v){ var ok=lsSetLocal(k,v); apiSet(k,v); return ok; }
+function lsDelete(k){ try{localStorage.removeItem(k);}catch(e){} apiDelete(k); }
+
+function ensureMasterDefaults(){
+  var d=DEFAULT_MASTER(),ch=false;
+  for(var k in d){ if(!(k in master)){ master[k]=d[k]; ch=true; } }
+  /* migrate weekly cleaning items from plain strings to {text,note} if this master was saved before that change */
+  for(var wk in master.weekly){
+    master.weekly[wk]=(master.weekly[wk]||[]).map(function(item){
+      if(typeof item==='string'){ ch=true; return {text:item,note:''}; }
+      return item;
+    });
+  }
+  return ch;
+}
+
+var master = lsGet(KEY_MASTER,null);
+if(!master){ master = DEFAULT_MASTER(); lsSetLocal(KEY_MASTER,master); }
+if(ensureMasterDefaults()) lsSetLocal(KEY_MASTER,master);
+(function migrateAdminPin(){
+  /* sites set up before named Kitchen/General Managers existed just had a
+     single shared master.pin — carry it forward as a named Kitchen Manager
+     so nobody gets locked out of a site that's already in use. */
+  if((!master.kitchenManagers||!master.kitchenManagers.length) && master.pin){
+    master.kitchenManagers=[{name:'Kitchen Manager', pin:master.pin}];
+    lsSetLocal(KEY_MASTER,master);
+  }
+})();
+(function pruneOldBookings(){
+  if(!master.bookings) return;
+  var cut=addDays(new Date(),-14), changed=false;
+  for(var k in master.bookings){ if(new Date(k)<cut){ delete master.bookings[k]; changed=true; } }
+  if(changed) lsSetLocal(KEY_MASTER,master);
+})();
+
+/* ---------------- who's logged in on this tablet ----------------
+   This is deliberately device-local, not synced to the shared database —
+   each tablet remembers its own person until someone taps "Switch user". */
+var KEY_SESSION='kw.session';
+function sessionGet(){ try{var v=localStorage.getItem(KEY_SESSION); return v?JSON.parse(v):null;}catch(e){return null;} }
+function sessionSet(u){ try{localStorage.setItem(KEY_SESSION,JSON.stringify(u));}catch(e){} }
+function sessionClear(){ try{localStorage.removeItem(KEY_SESSION);}catch(e){} }
+var session = sessionGet(); /* {name:'Alex', at:'...'} or null */
+var pendingLogin = null;
+var pendingLoginList = null;
+function staffLoginList(){
+  return (master.users||[]).concat(master.kitchenManagers||[]).concat(master.generalManagers||[]);
+}
+
+function renderUserBar(){
+  var b=el('userBar'); if(!b) return;
+  if(session){ b.innerHTML='<span>On shift: <b>'+esc(session.name)+'</b></span><button data-act="clockOut">Switch user</button>'; }
+  else { b.innerHTML='<span>Not logged in</span><button data-act="clockIn">Log in</button>'; }
+}
+function openLoginModal(onSuccess){
+  pendingLogin=onSuccess;
+  var users=staffLoginList();
+  pendingLoginList=users;
+  if(!users.length){
+    showModal('Log in','<p>No staff have been set up yet. Ask a manager to add staff under <b>Master \u2192 Staff</b>, then try again.</p>');
+    return;
+  }
+  var h='<div class="loginnames">';
+  users.forEach(function(u,i){ h+='<button class="btn" data-loginname="'+i+'">'+esc(u.name)+'</button>'; });
+  h+='</div><div id="loginPinArea" style="margin-top:14px"></div>';
+  showModal('Who are you?',h);
+}
+function showLoginPin(idx){
+  var u=(pendingLoginList||[])[idx]; if(!u) return;
+  var area=el('loginPinArea'); if(!area) return;
+  area.innerHTML='<div class="row"><input class="txt" id="loginPin" type="tel" placeholder="PIN" onfocus="this.select()" style="max-width:140px">'+
+    '<button class="btn primary" data-act="loginSubmit" data-uidx="'+idx+'">Sign in</button></div>';
+  var pinEl=el('loginPin');
+  if(pinEl){ pinEl.focus(); pinEl.addEventListener('keydown',function(ev){ if(ev.key==='Enter') doLogin(idx); }); }
+}
+function doLogin(idx){
+  var u=(pendingLoginList||[])[idx]; if(!u) return;
+  var pinEl=el('loginPin'); if(!pinEl) return;
+  if(pinEl.value!==String(u.pin)){ alert('Wrong PIN.'); pinEl.value=''; pinEl.focus(); return; }
+  session={name:u.name,at:stamp()}; sessionSet(session);
+  closeModal(); renderUserBar();
+  var cb=pendingLogin; pendingLogin=null;
+  if(cb) cb();
+  deliverMessagesFor(u.name);
+}
+function requireUser(cb){
+  if(session){ cb(); return; }
+  openLoginModal(cb);
+}
+
+/* ---------------- duty manager sign-off ----------------
+   Deliberately separate from the staff login above: whoever is logged
+   in on the tablet for cleaning/prep jobs isn't necessarily authorised to
+   sign off as duty manager, so this always asks for a duty manager's own
+   PIN at the moment of signing rather than trusting the tablet's session. */
+var pendingDmLogin = null;
+var pendingDmLoginList = null;
+function dmLoginList(){
+  return (master.dutyManagers||[]).concat(master.kitchenManagers||[]).concat(master.generalManagers||[]);
+}
+function openDmLoginModal(onSuccess){
+  pendingDmLogin=onSuccess;
+  var dms=dmLoginList();
+  pendingDmLoginList=dms;
+  if(!dms.length){
+    showModal('Duty manager sign-off','<p>No duty managers have been set up yet. Ask an admin to add duty managers under <b>Master \u2192 Duty Managers</b>, then try again.</p>');
+    return;
+  }
+  var h='<div class="loginnames">';
+  dms.forEach(function(u,i){ h+='<button class="btn" data-dmloginname="'+i+'">'+esc(u.name)+'</button>'; });
+  h+='</div><div id="dmLoginPinArea" style="margin-top:14px"></div>';
+  showModal('Duty manager sign-off — who are you?',h);
+}
+function showDmLoginPin(idx){
+  var u=(pendingDmLoginList||[])[idx]; if(!u) return;
+  var area=el('dmLoginPinArea'); if(!area) return;
+  area.innerHTML='<div class="row"><input class="txt" id="dmLoginPin" type="tel" placeholder="PIN" onfocus="this.select()" style="max-width:140px">'+
+    '<button class="btn primary" data-act="dmLoginSubmit" data-uidx="'+idx+'">Sign off</button></div>';
+  var pinEl=el('dmLoginPin');
+  if(pinEl){ pinEl.focus(); pinEl.addEventListener('keydown',function(ev){ if(ev.key==='Enter') doDmLogin(idx); }); }
+}
+function doDmLogin(idx){
+  var u=(pendingDmLoginList||[])[idx]; if(!u) return;
+  var pinEl=el('dmLoginPin'); if(!pinEl) return;
+  if(pinEl.value!==String(u.pin)){ alert('Wrong PIN.'); pinEl.value=''; pinEl.focus(); return; }
+  closeModal();
+  var cb=pendingDmLogin, name=u.name; pendingDmLogin=null;
+  if(cb) cb(name);
+  deliverMessagesFor(name);
+}
+function requireDm(cb){ openDmLoginModal(cb); }
+
+/* ---------------- kitchen/general manager sign-in ----------------
+   Same idea as the duty manager sign-off above, but restricted to just
+   Kitchen and General Managers — used for the notice board, since only
+   they should be able to post or remove a notice. */
+var pendingMgrLogin = null;
+var pendingMgrLoginList = null;
+function managerLoginList(){
+  return (master.kitchenManagers||[]).concat(master.generalManagers||[]);
+}
+function openManagerLoginModal(onSuccess){
+  pendingMgrLogin=onSuccess;
+  var mgrs=managerLoginList();
+  pendingMgrLoginList=mgrs;
+  if(!mgrs.length){
+    showModal('Kitchen/General Manager','<p>No Kitchen or General Managers have been set up yet. Ask an admin to add one under <b>Master \u2192 Kitchen Managers</b>, then try again.</p>');
+    return;
+  }
+  var h='<div class="loginnames">';
+  mgrs.forEach(function(u,i){ h+='<button class="btn" data-mgrloginname="'+i+'">'+esc(u.name)+'</button>'; });
+  h+='</div><div id="mgrLoginPinArea" style="margin-top:14px"></div>';
+  showModal('Kitchen/General Manager \u2014 who are you?',h);
+}
+function showMgrLoginPin(idx){
+  var u=(pendingMgrLoginList||[])[idx]; if(!u) return;
+  var area=el('mgrLoginPinArea'); if(!area) return;
+  area.innerHTML='<div class="row"><input class="txt" id="mgrLoginPin" type="tel" placeholder="PIN" onfocus="this.select()" style="max-width:140px">'+
+    '<button class="btn primary" data-act="mgrLoginSubmit" data-uidx="'+idx+'">Continue</button></div>';
+  var pinEl=el('mgrLoginPin');
+  if(pinEl){ pinEl.focus(); pinEl.addEventListener('keydown',function(ev){ if(ev.key==='Enter') doMgrLogin(idx); }); }
+}
+function doMgrLogin(idx){
+  var u=(pendingMgrLoginList||[])[idx]; if(!u) return;
+  var pinEl=el('mgrLoginPin'); if(!pinEl) return;
+  if(pinEl.value!==String(u.pin)){ alert('Wrong PIN.'); pinEl.value=''; pinEl.focus(); return; }
+  closeModal();
+  var cb=pendingMgrLogin, name=u.name; pendingMgrLogin=null;
+  if(cb) cb(name);
+}
+function requireManager(cb){ openManagerLoginModal(cb); }
+function findAdminByPin(pinVal){
+  var pools=[
+    {arr:master.kitchenManagers||[], level:'full'},
+    {arr:master.generalManagers||[], level:'full'},
+    {arr:master.dutyManagers||[], level:'duty'}
+  ];
+  for(var i=0;i<pools.length;i++){
+    var hit=pools[i].arr.filter(function(u){ return String(u.pin)===pinVal; })[0];
+    if(hit) return {name:hit.name, level:pools[i].level};
+  }
+  return null;
+}
+function deliverMessagesFor(name){
+  var msgs=(master.messages||[]).filter(function(m){ return m.to===name && !m.read; });
+  if(!msgs.length) return;
+  msgs.forEach(function(m){ m.read=true; m.readAt=stamp(); });
+  saveMaster();
+  var body=msgs.map(function(m){
+    return '<div class="noteitem">'+esc(m.text)+'<div class="meta">From '+esc(m.from)+' \u00b7 '+esc(m.at)+'</div></div>';
+  }).join('');
+  showModal('Message'+(msgs.length>1?'s':'')+' for '+esc(name),body);
+}
+
+/* ---------------- bookings PDF upload ----------------
+   Deliberately not parsed — the uploaded PDF is stored as-is and shown
+   as-is, so there's nothing for a layout quirk to misread. */
+function handleBookingsUpload(file,dateVal){
+  var reader=new FileReader();
+  reader.onload=function(e){
+    master.bookings=master.bookings||{};
+    master.bookings[dateVal]={fileName:file.name,dataUrl:e.target.result,uploadedAt:stamp()};
+    saveMaster();
+    render();
+  };
+  reader.onerror=function(){ alert('Couldn\u2019t read that file — try again.'); };
+  reader.readAsDataURL(file);
+}
+
+/* ---------------- dates ---------------- */
+function pad(n){return n<10?'0'+n:''+n;}
+function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function mondayOf(d){ var x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); var w=x.getDay(); var diff=(w===0?-6:1-w); x.setDate(x.getDate()+diff); return x; }
+function addDays(d,n){ var x=new Date(d.getTime()); x.setDate(x.getDate()+n); return x; }
+function niceDate(d){ return DAYS[(d.getDay()+6)%7].label+' '+d.getDate()+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getFullYear(); }
+function shortDate(d){ return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear(); }
+function stamp(){ var n=new Date(); return iso(n)+' '+pad(n.getHours())+':'+pad(n.getMinutes()); }
+function todayIdx(){ return (new Date().getDay()+6)%7; }
+
+/* ---------------- week state ---------------- */
+function blankDay(){ return {morning:{},defrost:{},defrostBy:{ini:'',at:''},prep:{},weekly:{},closedown:{},temp:'',chef:{ini:'',at:''},dm:{ini:'',at:''},notes:[],ack:null,closed:false,closedAt:''}; }
+function blankWeek(ws){ var w={weekStart:iso(ws),created:stamp(),days:{}}; DK.forEach(function(k){ w.days[k]=blankDay(); }); return w; }
+
+var weekStart = mondayOf(new Date());
+var weekKey = iso(weekStart);
+var week = lsGet(KEY_WEEK+weekKey,null);
+if(!week){ week = blankWeek(weekStart); lsSetLocal(KEY_WEEK+weekKey,week); }
+var carry = lsGet(KEY_CARRY,null); /* {from:'2026-07-26', notes:[], open:[] } handed to Monday */
+
+function saveWeek(){ lsSet(KEY_WEEK+weekKey,week); }
+function saveMaster(){ lsSet(KEY_MASTER,master); }
+
+/* find any earlier un-archived weeks still sitting in storage */
+function strayWeeks(){
+  var out=[];
+  for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i);
+    if(k && k.indexOf(KEY_WEEK)===0){ var wk=k.slice(KEY_WEEK.length); if(wk!==weekKey) out.push(wk); } }
+  return out.sort();
+}
+
+/* ---------------- helpers ---------------- */
+function num(v){ if(v===''||v===null||v===undefined) return 0; var n=parseFloat(v); return isNaN(n)?0:n; }
+function defrostByOf(st){
+  var db=st.defrostBy;
+  if(db && typeof db==='object') return db;
+  if(typeof db==='string' && db) return {ini:db,at:''};
+  return {ini:'',at:''};
+}
+function has(v){ return !(v===''||v===null||v===undefined); }
+function fmt(n){ return (Math.round(n*100)/100).toString(); }
+function esc(s){ return String(s===undefined||s===null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function dotFor(i){ return DAYS[(i+2)%7]; }
+function el(id){ return document.getElementById(id); }
+
+/* ---------------- UI state ---------------- */
+var ui = { tab: DK[todayIdx()], adminLevel:null, adminName:'', collapsed:{} };
+var noticeDraftImg = null; /* photo attached to a notice being composed, before it's posted */
+
+/* ---------------- modal ---------------- */
+function showModal(title,body,footer){
+  el('modal').innerHTML='<div class="mbg" data-close="1"><div class="mbox"><div class="mh">'+esc(title)+
+    '</div><div class="mb">'+body+'</div><div class="mf">'+(footer||'<button class="btn primary" data-close="1">Close</button>')+'</div></div></div>';
+}
+function closeModal(){ el('modal').innerHTML=''; }
+function printSection(key){
+  var dk=ui.tab, di=DK.indexOf(dk); if(di<0) return;
+  var d=DAYS[di], st=week.days[dk], dt=addDays(weekStart,di);
+  var title='', rows='';
+  if(key==='prep'){
+    title='Prep list';
+    rows='<table><thead><tr><th>Item</th><th>UOM</th><th>Par</th><th>Have</th><th>To make</th></tr></thead><tbody>';
+    master.prep.forEach(function(p){
+      var r=st.prep[p.id]||{}, tgt=num(p.tg[di]);
+      if(p.task){ rows+='<tr><td>'+esc(p.name)+'</td><td>'+esc(p.uom)+'</td><td>\u2014</td><td colspan="2">task'+(r.done?' \u2014 done':'')+'</td></tr>'; return; }
+      var make=tgt-num(r.have);
+      rows+='<tr><td>'+esc(p.name)+(p.detail?'<div class="sub">'+esc(p.detail)+'</div>':'')+'</td><td>'+esc(p.uom)+'</td><td>'+fmt(tgt)+'</td><td>'+esc(r.have||'')+'</td><td>'+(make>0?fmt(make):'ok')+'</td></tr>';
+    });
+    rows+='</tbody></table>';
+  } else if(key==='defrost'){
+    title='Defrost list';
+    rows='<table><thead><tr><th>Item</th><th>How to count</th><th>Level</th><th>On line</th><th>Back up</th><th>Needed</th></tr></thead><tbody>';
+    master.defrost.forEach(function(it){
+      var r=st.defrost[it.id]||{}, lvl=num(it.lv[di]);
+      var need=lvl-(num(r.on)+num(r.bk));
+      rows+='<tr><td>'+esc(it.name)+(it.note?'<div class="sub">'+esc(it.note)+'</div>':'')+'</td><td>'+esc(it.uom)+'</td><td>'+fmt(lvl)+'</td><td>'+esc(r.on||'')+'</td><td>'+esc(r.bk||'')+'</td><td>'+(need>0?fmt(need):(need===0?'ok':fmt(-need)+' over'))+'</td></tr>';
+    });
+    rows+='</tbody></table>';
+  } else return;
+  var w=window.open('','_blank');
+  if(!w){ alert('Please allow pop-ups for this site so the print page can open, then try again.'); return; }
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>'+
+    'body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#111;padding:24px}'+
+    'h1{font-size:20px;margin:0 0 2px}.sub{color:#666;font-size:12px;margin-top:2px}'+
+    'p.meta{color:#555;margin:0 0 18px;font-size:13px}'+
+    'table{width:100%;border-collapse:collapse}th,td{padding:8px 10px;border-bottom:1px solid #ccc;text-align:left;font-size:14px;vertical-align:top}'+
+    'th{text-transform:uppercase;font-size:11px;color:#555;letter-spacing:.3px}'+
+    '</style></head><body>'+
+    '<h1>'+esc(title)+'</h1><p class="meta">'+esc(d.label)+' '+esc(shortDate(dt))+'</p>'+rows+'</body></html>');
+  w.document.close();
+  setTimeout(function(){ w.focus(); w.print(); },350);
+}
+function showBookingsModal(dISO){
+  var b=(master.bookings||{})[dISO];
+  if(!b||!b.dataUrl) return;
+  var liveLink='';
+  if(master.bookingsSourceUrl){
+    var base=master.bookingsSourceUrl.split('?')[0];
+    liveLink=' <a href="'+esc(base)+'?date='+esc(dISO)+'" target="_blank" rel="noopener">View the live run sheet \u2197</a>';
+  }
+  var body='<div class="banner info" style="margin:0 0 14px;white-space:normal">Not live \u2014 a PDF uploaded '+
+    esc(b.uploadedAt||'')+'. Bookings may have changed since.'+liveLink+'</div>'+
+    '<p class="small muted" style="margin:0 0 12px">'+esc(b.fileName||'Bookings PDF')+'</p>'+
+    '<div class="row"><a class="btn primary" href="'+esc(b.dataUrl)+'" target="_blank" rel="noopener">Open PDF</a></div>';
+  showModal('Bookings \u2014 '+shortDate(new Date(dISO)),body);
+}
+document.addEventListener('click',function(e){
+  var t=e.target;
+  if(t.getAttribute && t.getAttribute('data-close')) closeModal();
+  var ln=t.closest && t.closest('[data-loginname]');
+  if(ln){ showLoginPin(parseInt(ln.getAttribute('data-loginname'),10)); }
+  var subm=t.closest && t.closest('[data-act="loginSubmit"]');
+  if(subm){ doLogin(parseInt(subm.getAttribute('data-uidx'),10)); }
+  var dln=t.closest && t.closest('[data-dmloginname]');
+  if(dln){ showDmLoginPin(parseInt(dln.getAttribute('data-dmloginname'),10)); }
+  var dsubm=t.closest && t.closest('[data-act="dmLoginSubmit"]');
+  if(dsubm){ doDmLogin(parseInt(dsubm.getAttribute('data-uidx'),10)); }
+  var mln=t.closest && t.closest('[data-mgrloginname]');
+  if(mln){ showMgrLoginPin(parseInt(mln.getAttribute('data-mgrloginname'),10)); }
+  var msubm=t.closest && t.closest('[data-act="mgrLoginSubmit"]');
+  if(msubm){ doMgrLogin(parseInt(msubm.getAttribute('data-uidx'),10)); }
+});
+el('userBar').addEventListener('click',function(e){
+  var b=e.target.closest('[data-act]'); if(!b) return;
+  var act=b.getAttribute('data-act');
+  if(act==='clockIn') openLoginModal(null);
+  else if(act==='clockOut'){
+    if(confirm('Switch user? You\u2019ll need to log in again to tick anything off.')){ sessionClear(); session=null; renderUserBar(); }
+  }
+});
+
+/* =====================================================================
+   TABS
+   ===================================================================== */
+function renderTabs(){
+  var ti=todayIdx(), h='';
+  DAYS.forEach(function(d,i){
+    var st=week.days[d.k];
+    h+='<button class="tab'+(ui.tab===d.k?' active':'')+(i===ti?' today':'')+(st.closed?' done':'')+'" data-tab="'+d.k+'">'+d.short+(st.closed?' ✓':'')+'</button>';
+  });
+  h+='<button class="tab'+(ui.tab==='master'?' active':'')+'" data-tab="master">Master</button>';
+  h+='<button class="tab'+(ui.tab==='records'?' active':'')+'" data-tab="records">Records</button>';
+  el('tabs').innerHTML=h;
+  el('weeklabel').innerHTML='Week commencing <b>'+shortDate(weekStart)+'</b><br>'+esc(niceDate(new Date()));
+}
+el('tabs').addEventListener('click',function(e){
+  var b=e.target.closest('[data-tab]'); if(!b) return;
+  ui.tab=b.getAttribute('data-tab'); render();
+  window.scrollTo(0,0);
+});
+
+/* =====================================================================
+   DAY VIEW
+   ===================================================================== */
+function openTasksFor(dk){
+  /* Only unfinished weekly cleaning jobs carry into the next day's handover.
+     Prep, defrost and daily closedown are same-day jobs and don't roll over. */
+  var st=week.days[dk], out=[];
+  (master.weekly[dk]||[]).forEach(function(t,i){ var r=st.weekly[i]||{}; if(!r.done) out.push('Weekly clean: '+t.text); });
+  return out;
+}
+
+function renderDay(dk){
+  var di=DK.indexOf(dk), d=DAYS[di], st=week.days[dk], dt=addDays(weekStart,di), dot=dotFor(di);
+  var counts=sectionCounts(dk,st);
+  var openMorning=isSectionOpen('morning',sectionComplete('morning',counts));
+  var openPrep=isSectionOpen('prep',sectionComplete('prep',counts));
+  var openWeekly=isSectionOpen('weekly',sectionComplete('weekly',counts));
+  var openDefrost=isSectionOpen('defrost',sectionComplete('defrost',counts));
+  var openClosedown=isSectionOpen('closedown',sectionComplete('closedown',counts));
+  var prev = di>0 ? {k:DK[di-1], label:DAYS[di-1].label, notes:week.days[DK[di-1]].notes, open:openTasksFor(DK[di-1])}
+                  : (carry ? {k:'carry', label:'last Sunday', notes:carry.notes||[], open:carry.open||[]} : null);
+  var h='';
+
+  h+='<div class="daytitle"><h2>'+d.label+'</h2><span class="dt">'+esc(shortDate(dt))+'</span></div>';
+  h+=jumpNav('','top');
+
+  /* ---- NOTICE BOARD ---- */
+  h+='<div class="card noprint"><div class="sec-head"><h2>Notice Board</h2><span class="prog">From Kitchen &amp; General Managers</span></div><div class="pad">';
+  if(!(master.notices||[]).length){ h+='<p class="muted small">Nothing posted right now.</p>'; }
+  (master.notices||[]).forEach(function(n){
+    h+='<div class="noteitem">'+esc(n.text)+
+       (n.img?'<img src="'+n.img+'" style="max-width:240px;display:block;margin-top:8px;border-radius:10px;cursor:pointer" data-act="viewNoticeImg" data-id="'+esc(n.id)+'">':'')+
+       '<div class="meta">'+esc(n.from)+' &middot; '+esc(n.at)+
+       ' <button class="btn sm danger" style="margin-left:8px" data-act="delNotice" data-id="'+esc(n.id)+'">Remove</button></div></div>';
+  });
+  h+='<textarea id="noticeText" placeholder="Post something for everyone to see \u2014 stock issues, equipment down, a heads-up for the week…"></textarea>';
+  if(noticeDraftImg){
+    h+='<div style="margin-top:8px"><img src="'+noticeDraftImg+'" style="max-width:200px;border-radius:10px;display:block"><button type="button" class="btn sm danger" style="margin-top:6px" data-act="clearNoticeImg">Remove photo</button></div>';
+  }
+  h+='<div class="row" style="margin-top:8px"><button type="button" class="btn" data-act="pickNoticeImg">'+(noticeDraftImg?'Change photo':'Add photo')+'</button>'+
+     '<input type="file" accept="image/*" id="noticeImgInput" style="display:none">'+
+     '<button class="btn primary" data-act="addNotice">Post notice</button></div>'+
+     '<p class="small muted" style="margin:8px 0 0">Kitchen or General Manager PIN needed to post or remove.</p></div></div>';
+
+  /* ---- handover in ---- */
+  if(prev && ((prev.notes&&prev.notes.length)||(prev.open&&prev.open.length))){
+    h+='<div class="banner hand"><h3>Handover from '+esc(prev.label)+'</h3>';
+    if(prev.notes&&prev.notes.length){
+      prev.notes.forEach(function(n){
+        h+='<div class="noteitem">'+esc(n.text)+'<div class="meta">'+esc(n.by||'unsigned')+' &middot; '+esc(n.at)+'</div></div>';
+      });
+    }
+    if(prev.open&&prev.open.length){
+      h+='<p class="small" style="margin:10px 0 0"><b>Not completed '+esc(prev.label==='last Sunday'?'on Sunday':'on '+prev.label)+' ('+prev.open.length+'):</b></p><ul class="small">';
+      prev.open.slice(0,12).forEach(function(t){ h+='<li>'+esc(t)+'</li>'; });
+      if(prev.open.length>12) h+='<li class="muted">…and '+(prev.open.length-12)+' more</li>';
+      h+='</ul>';
+    }
+    if(st.ack){
+      h+='<p class="stamp" style="margin:10px 0 0">Read and understood — '+esc(st.ack.ini)+' at '+esc(st.ack.at)+'</p>';
+    }else{
+      h+='<div class="row noprint" style="margin-top:10px"><button class="btn ok" data-act="ack">Read &amp; understood'+(session?' — sign as '+esc(session.name):'')+'</button></div>';
+    }
+    h+='</div>';
+  }
+
+  /* ---- bookings ---- */
+  var bkToday=(master.bookings||{})[iso(dt)];
+  if(bkToday&&bkToday.dataUrl){
+    h+='<div class="card noprint"><div class="pad row" style="justify-content:space-between;align-items:center">'+
+       '<div><b>Bookings for today</b><div class="small muted">'+esc(bkToday.fileName||'PDF uploaded')+'</div></div>'+
+       '<button class="btn primary" data-act="showBookings">Show today\u2019s bookings</button></div></div>';
+  }
+
+  /* ---- MORNING CLEANING ---- */
+  h+='<div class="card" id="sec-morning" style="--sc:'+SECTIONS[0].color+'">'+jumpNav('morning','inline')+'<div class="sec-head"><h2>Morning cleaning</h2><span class="prog" id="pMorning"></span>'+toggleBtn('morning',openMorning)+'</div>';
+  h+='<div class="sec-body'+(openMorning?'':' closed')+'" id="body-morning">';
+  if(master.morningNote){ h+='<div class="pad small muted" style="padding-bottom:0">'+esc(master.morningNote)+'</div>'; }
+  (master.morning||[]).forEach(function(mi){
+    var r=(st.morning||{})[mi.id]||{};
+    var methodLine = mi.byDay ? mi.byDay[di] : mi.method;
+    h+='<div class="task'+(r.done?' done':'')+'"><input type="checkbox" class="chk" data-f="m.done" data-id="'+mi.id+'"'+(r.done?' checked':'')+'>'+
+       '<div class="body"><div class="t">'+esc(mi.task)+(mi.detail||mi.img?'<span class="info" data-info="m:'+mi.id+'">i</span>':'')+'</div>'+
+       (methodLine?'<div class="m">'+esc(methodLine)+'</div>':'')+
+       (mi.note?'<div class="note">'+esc(mi.note)+'</div>':'')+'</div>'+
+       (r.done?'<div class="stampbox"><b>'+esc(r.ini)+'</b><span class="stamp">'+esc(r.at)+'</span></div>':'')+'</div>';
+  });
+  h+='</div></div>';
+
+  /* ---- PREP ---- */
+  h+='<div class="card" id="sec-prep" style="--sc:'+SECTIONS[1].color+'">'+jumpNav('prep','inline')+'<div class="sec-head"><h2>Prep</h2><span class="prog" id="pPrep"></span>'+
+     '<button class="btn sm noprint" data-act="printSection" data-id="prep">Print prep list</button>'+toggleBtn('prep',openPrep)+'</div>';
+  h+='<div class="sec-body'+(openPrep?'':' closed')+'" id="body-prep">';
+  h+='<div class="tblwrap"><table class="grid"><thead><tr><th>Item</th><th>UOM</th><th>Par</th><th>Have</th><th>To make</th><th>Done</th></tr></thead><tbody>';
+  master.prep.forEach(function(p){
+    var r=st.prep[p.id]||{}, tgt=num(p.tg[di]);
+    if(p.task){
+      h+='<tr><td class="item">'+esc(p.name)+(p.detail||p.img?'<span class="info" data-info="p:'+p.id+'">i</span>':'')+'</td>'+
+         '<td class="uom">'+esc(p.uom)+'</td><td class="lvl">—</td><td class="muted small">task</td><td class="calc"></td>'+
+         '<td class="tick"><input type="checkbox" class="chk" data-f="p.done" data-id="'+p.id+'"'+(r.done?' checked':'')+'></td></tr>';
+      return;
+    }
+    var make=tgt-num(r.have);
+    var cell = make>0 ? '<span class="pill need">'+fmt(make)+'</span>' : '<span class="pill zero">ok</span>';
+    h+='<tr><td class="item">'+esc(p.name)+(p.detail||p.img?'<span class="info" data-info="p:'+p.id+'">i</span>':'')+'</td>'+
+       '<td class="uom">'+esc(p.uom)+'</td><td class="lvl">'+fmt(tgt)+'</td>'+
+       '<td><input class="num" inputmode="decimal" data-f="p.have" data-id="'+p.id+'" value="'+esc(r.have)+'"></td>'+
+       '<td class="calc" data-make="'+p.id+'">'+cell+'</td>'+
+       '<td class="tick"><input type="checkbox" class="chk" data-f="p.done" data-id="'+p.id+'"'+(r.done?' checked':'')+'></td></tr>';
+  });
+  h+='</tbody></table></div></div></div>';
+
+  /* ---- WEEKLY CLEANING ---- */
+  var wl=master.weekly[dk]||[];
+  h+='<div class="card" id="sec-weekly" style="--sc:'+SECTIONS[2].color+'">'+jumpNav('weekly','inline')+'<div class="sec-head"><h2>Weekly cleaning — '+esc(d.label)+'</h2><span class="prog" id="pWeekly"></span>'+toggleBtn('weekly',openWeekly)+'</div>';
+  h+='<div class="sec-body'+(openWeekly?'':' closed')+'" id="body-weekly">';
+  if(!wl.length){ h+='<div class="pad muted">No scheduled weekly job today. Anything outstanding from earlier in the week should be caught up.</div>'; }
+  wl.forEach(function(t,i){
+    var r=st.weekly[i]||{};
+    h+='<div class="task'+(r.done?' done':'')+'"><input type="checkbox" class="chk" data-f="w.done" data-id="'+i+'"'+(r.done?' checked':'')+'>'+
+       '<div class="body"><div class="t">'+esc(t.text)+((t.note||t.img)?'<span class="info" data-info="w:'+i+'">i</span>':'')+
+       (t.trail?'<span class="pill trail">Sign off in Trail</span>':'')+'</div>'+
+       (t.note?'<div class="note">'+esc(t.note)+'</div>':'')+'</div>'+
+       (r.done?'<div class="stampbox"><b>'+esc(r.ini)+'</b><span class="stamp">'+esc(r.at)+'</span></div>':'')+'</div>';
+  });
+  h+='<div class="pad small muted">'+esc(master.weeklyFooter)+'</div></div></div>';
+
+  /* ---- DEFROST ---- */
+  var dn=0, dtot=0;
+  h+='<div class="card" id="sec-defrost" style="--sc:'+SECTIONS[3].color+'">'+jumpNav('defrost','inline')+'<div class="sec-head"><h2>Defrost</h2><span class="prog" id="pDefrost"></span>'+
+     '<button class="btn sm noprint" data-act="printSection" data-id="defrost">Print defrost list</button>'+toggleBtn('defrost',openDefrost)+'</div>';
+  h+='<div class="sec-body'+(openDefrost?'':' closed')+'" id="body-defrost">';
+  h+='<div class="pad" style="padding-bottom:0"><div class="dotbar"><span class="dot"><i style="background:'+dot.colour+'"></i>Items taken out today get a <b style="margin-left:4px">'+dot.label+'</b> day dot ('+dot.name+')</span></div>';
+  h+='<p class="small muted" style="margin:0 0 10px">'+esc(master.defrostNote)+'</p></div>';
+  h+='<div class="tblwrap"><table class="grid"><thead><tr><th>Item</th><th>How to count</th><th>Defrost level</th><th>On line</th><th>Back up</th><th>Needed</th><th>Out</th></tr></thead><tbody>';
+  master.defrost.forEach(function(it){
+    var r=st.defrost[it.id]||{}, lvl=num(it.lv[di]);
+    var need=lvl-(num(r.on)+num(r.bk));
+    var cell = need>0 ? '<span class="pill need">'+fmt(need)+'</span>' : (need===0? '<span class="pill zero">ok</span>' : '<span class="pill over">'+fmt(-need)+' over</span>');
+    if(need>0){ dtot++; if(r.out) dn++; }
+    if(it.br) h+='<tr class="spacer"><td colspan="7"></td></tr>';
+    h+='<tr><td class="item">'+esc(it.name)+(it.note||it.img?'<span class="info" data-info="d:'+it.id+'">i</span>':'')+
+       (it.note?'<span class="rownote">'+esc(it.note)+'</span>':'')+'</td>'+
+       '<td class="uom">'+esc(it.uom)+'</td><td class="lvl">'+fmt(lvl)+'</td>'+
+       '<td><input class="num" inputmode="decimal" data-f="d.on" data-id="'+it.id+'" value="'+esc(r.on)+'"></td>'+
+       '<td><input class="num" inputmode="decimal" data-f="d.bk" data-id="'+it.id+'" value="'+esc(r.bk)+'"></td>'+
+       '<td class="calc" data-need="'+it.id+'">'+cell+'</td>'+
+       '<td class="tick"><input type="checkbox" class="chk" data-f="d.out" data-id="'+it.id+'"'+(r.out?' checked':'')+'></td></tr>';
+  });
+  h+='</tbody></table></div>';
+  h+='<div class="signrow"><div><label>Defrost completed by</label>'+(defrostByOf(st).ini
+     ? '<div><b>'+esc(defrostByOf(st).ini)+'</b> <span class="stamp">'+esc(defrostByOf(st).at)+'</span></div>'
+     : '<button class="btn ok sm" data-act="signDefrost">Sign'+(session?' as '+esc(session.name):'')+'</button>')+'</div></div></div></div>';
+
+  /* ---- CLOSEDOWN ---- */
+  h+='<div class="card" id="sec-closedown" style="--sc:'+SECTIONS[4].color+'">'+jumpNav('closedown','inline')+'<div class="sec-head"><h2>Daily closedown</h2><span class="prog" id="pClose"></span>'+toggleBtn('closedown',openClosedown)+'</div>';
+  h+='<div class="sec-body'+(openClosedown?'':' closed')+'" id="body-closedown">';
+  master.closedown.forEach(function(c){
+    var r=st.closedown[c.id]||{};
+    h+='<div class="task'+(r.done?' done':'')+'"><input type="checkbox" class="chk" data-f="c.done" data-id="'+c.id+'"'+(r.done?' checked':'')+'>'+
+       '<div class="body"><div class="t">'+esc(c.task)+(c.detail||c.note||c.img?'<span class="info" data-info="c:'+c.id+'">i</span>':'')+'</div>'+
+       (c.method?'<div class="m">'+esc(c.method)+'</div>':'')+
+       (c.note?'<div class="note">'+esc(c.note)+'</div>':'')+'</div>'+
+       (r.done?'<div class="stampbox"><b>'+esc(r.ini)+'</b><span class="stamp">'+esc(r.at)+'</span></div>':'')+'</div>';
+  });
+  h+='<div class="signrow"><div style="flex:1;min-width:240px"><label>'+esc(master.tempQuestion)+'</label>'+
+     '<input class="txt" data-f="temp" value="'+esc(st.temp)+'" placeholder="Answer"></div></div>';
+  h+='<div class="signrow">'+
+     '<div><label>Closing chef initials</label>'+(st.chef.at
+        ? '<div><b>'+esc(st.chef.ini)+'</b> <span class="stamp">'+esc(st.chef.at)+'</span></div>'
+        : '<button class="btn ok sm" data-act="signChef">Sign'+(session?' as '+esc(session.name):'')+'</button>')+'</div>'+
+     '<div><label>Duty manager initials</label>'+(st.dm.at
+        ? '<div><b>'+esc(st.dm.ini)+'</b> <span class="stamp">'+esc(st.dm.at)+'</span></div>'
+        : '<button class="btn ok sm" data-act="signDm">Duty manager sign-off</button>')+'</div>'+
+     '<div class="small muted" style="flex:1;min-width:200px">Signatures confirm cleaning has been completed to a satisfactory standard. Once signed they are time-stamped and locked.</div>'+
+     '</div></div></div>';
+
+  /* ---- HANDOVER OUT ---- */
+  h+='<div class="card noprint"><div class="sec-head"><h2>Handover to '+esc(DAYS[(di+1)%7].label)+'</h2></div><div class="pad">';
+  if(st.notes.length){ st.notes.forEach(function(n,i){
+      h+='<div class="noteitem">'+esc(n.text)+'<div class="meta">'+esc(n.by||'unsigned')+' &middot; '+esc(n.at)+
+         ' <button class="btn sm danger" style="margin-left:8px" data-act="delNote" data-id="'+i+'">Remove</button></div></div>';
+    }); }
+  h+='<textarea id="noteText" placeholder="Anything the next shift needs to know — low stock, equipment faults, bookings, items still defrosting…"></textarea>'+
+     '<div class="row" style="margin-top:8px"><button class="btn primary" data-act="addNote">Add handover note'+(session?' — as '+esc(session.name):'')+'</button></div></div></div>';
+
+  /* ---- CLOSE DAY ---- */
+  h+='<div class="card noprint"><div class="pad row">';
+  if(st.closed){ h+='<div class="banner good" style="margin:0;flex:1">Day closed at '+esc(st.closedAt)+'. <button class="btn sm" data-act="reopen" style="margin-left:8px">Reopen</button></div>'; }
+  else { h+='<button class="btn ok" data-act="closeDay">Mark '+esc(d.label)+' complete</button><span class="small muted">Locks nothing — it just flags the day as finished on the tabs.</span>'; }
+  h+='<button class="btn" onclick="window.print()" style="margin-left:auto">Print this day</button></div></div>';
+
+  return h;
+}
+
+/* =====================================================================
+   MASTER (admin)
+   ===================================================================== */
+function renderMaster(){
+  if(!ui.adminLevel){
+    return '<div class="card"><div class="sec-head"><h2>Master tables</h2></div><div class="pad">'+
+      '<p>The master tables hold the defrost pars, prep pars, cleaning lists, staff, and bookings that every day is built from. Enter a Kitchen Manager, General Manager, or Duty Manager PIN to continue.</p>'+
+      '<p class="small muted">Kitchen Managers and General Managers can open and change everything here, and can sign off anything. Duty Managers can open Staff and Bookings only.</p>'+
+      '<div class="row"><input class="txt" id="pinIn" type="tel" placeholder="PIN" onfocus="this.select()" style="max-width:140px">'+
+      '<button class="btn primary" data-act="unlock">Unlock</button></div></div></div>';
+  }
+  var full=ui.adminLevel==='full';
+  var h='';
+  h+=masterJumpNav('','top');
+  h+='<div class="card noprint"><div class="pad row" style="justify-content:space-between;align-items:center">'+
+     '<div><b>Unlocked'+(ui.adminName?(' as '+esc(ui.adminName)):'')+'</b><div class="small muted">'+(full?'Full manager access':'Duty manager access — Staff and Bookings only')+'</div></div>'+
+     '<button class="btn" data-act="lock">Lock master tables</button></div></div>';
+
+  if(full){
+  h+='<div class="card" id="msec-morning" style="--sc:#c2410c">'+masterJumpNav('morning','inline')+'<div class="sec-head"><h2>Morning cleaning</h2><span class="prog">Unlocked — changes save automatically</span></div>'+
+     '<div class="pad small muted">'+
+     '<textarea data-m="mo.intro" style="min-height:44px">'+esc(master.morningNote||'')+'</textarea>'+
+     '<div style="height:8px"></div>Shown above the morning cleaning list on every day\'s page.</div>'+
+     '<div class="tblwrap"><table class="grid" style="min-width:900px"><thead><tr><th>Item</th><th>Method (fixed)</th><th>Note</th><th>Photo</th>';
+  DAYS.forEach(function(d){ h+='<th style="text-align:center">'+d.short+'</th>'; });
+  h+='<th></th></tr></thead><tbody>';
+  master.morning.forEach(function(mi,r){
+    h+='<tr><td><input class="txt" style="max-width:160px;min-width:140px" data-m="mo.task" data-r="'+r+'" value="'+esc(mi.task)+'"></td>'+
+       '<td><input class="txt" style="max-width:200px;min-width:170px" data-m="mo.method" data-r="'+r+'" value="'+esc(mi.byDay?'':(mi.method||''))+'" placeholder="'+(mi.byDay?'using day columns':'')+'"></td>'+
+       '<td><input class="txt" style="max-width:200px;min-width:140px" data-m="mo.note" data-r="'+r+'" value="'+esc(mi.note||'')+'"></td>'+
+       '<td>'+photoCell('mo',r,mi.img)+'</td>';
+    DK.forEach(function(k,c){ h+='<td><input class="txt" style="max-width:110px;min-width:90px" data-m="mo.byDay" data-r="'+r+'" data-c="'+c+'" value="'+esc(mi.byDay?mi.byDay[c]:'')+'"></td>'; });
+    h+='<td><button class="btn sm danger" data-act="delM" data-id="'+r+'">Delete</button></td></tr>';
+  });
+  h+='</tbody></table></div><div class="pad row"><button class="btn primary" data-act="addM">Add morning cleaning job</button></div></div>';
+
+  /* defrost pars */
+  h+='<div class="card" id="msec-defrost" style="--sc:#2563eb">'+masterJumpNav('defrost','inline')+'<div class="sec-head"><h2>Defrost pars</h2><span class="prog">Defrost level by day</span></div><div class="tblwrap"><table class="grid" style="min-width:900px"><thead><tr><th>Item</th><th>How to count</th><th>Photo</th>';
+  DAYS.forEach(function(d){ h+='<th style="text-align:center">'+d.short+'</th>'; });
+  h+='<th></th></tr></thead><tbody>';
+  master.defrost.forEach(function(it,r){
+    h+='<tr><td><input class="txt" style="max-width:180px" data-m="d.name" data-r="'+r+'" value="'+esc(it.name)+'">'+
+       '<div><input class="txt" style="max-width:260px;height:36px;margin-top:4px;font-size:13px" data-m="d.note" data-r="'+r+'" value="'+esc(it.note||'')+'" placeholder="Note shown under the item"></div></td>'+
+       '<td><input class="txt" style="max-width:130px" data-m="d.uom" data-r="'+r+'" value="'+esc(it.uom)+'"></td>'+
+       '<td>'+photoCell('d',r,it.img)+'</td>';
+    DK.forEach(function(k,c){ h+='<td><input class="num" inputmode="decimal" data-m="d.lv" data-r="'+r+'" data-c="'+c+'" value="'+esc(it.lv[c])+'"></td>'; });
+    h+='<td><button class="btn sm danger" data-act="delD" data-id="'+r+'">Delete</button></td></tr>';
+  });
+  h+='</tbody></table></div><div class="pad row"><button class="btn primary" data-act="addD">Add defrost item</button></div></div>';
+
+  /* prep pars */
+  h+='<div class="card" id="msec-prep" style="--sc:#0891b2">'+masterJumpNav('prep','inline')+'<div class="sec-head"><h2>Prep pars</h2><span class="prog">Quantity to have ready by day</span></div><div class="tblwrap"><table class="grid" style="min-width:900px"><thead><tr><th>Item</th><th>UOM</th><th>Photo</th>';
+  DAYS.forEach(function(d){ h+='<th style="text-align:center">'+d.short+'</th>'; });
+  h+='<th></th></tr></thead><tbody>';
+  master.prep.forEach(function(p,r){
+    h+='<tr><td><input class="txt" style="max-width:180px" data-m="p.name" data-r="'+r+'" value="'+esc(p.name)+'">'+
+       '<div><input class="txt" style="max-width:260px;height:36px;margin-top:4px;font-size:13px" data-m="p.detail" data-r="'+r+'" value="'+esc(p.detail)+'" placeholder="Recipe / method shown on tap"></div></td>'+
+       '<td><input class="txt" style="max-width:120px" data-m="p.uom" data-r="'+r+'" value="'+esc(p.uom)+'"></td>'+
+       '<td>'+photoCell('p',r,p.img)+'</td>';
+    DK.forEach(function(k,c){ h+='<td><input class="num" inputmode="decimal" data-m="p.tg" data-r="'+r+'" data-c="'+c+'" value="'+esc(p.tg[c])+'"></td>'; });
+    h+='<td><button class="btn sm danger" data-act="delP" data-id="'+r+'">Delete</button></td></tr>';
+  });
+  h+='</tbody></table></div><div class="pad row"><button class="btn primary" data-act="addP">Add prep item</button></div></div>';
+
+  /* weekly cleaning */
+  h+='<div class="card" id="msec-weekly" style="--sc:#7c3aed">'+masterJumpNav('weekly','inline')+'<div class="sec-head"><h2>Weekly cleaning rota</h2><span class="prog">One box per task</span></div><div class="pad">';
+  DAYS.forEach(function(d){
+    h+='<label style="display:block;font-weight:700;margin:14px 0 6px">'+d.label+'</label>';
+    (master.weekly[d.k]||[]).forEach(function(t,i){
+      h+='<div style="border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px">'+
+         '<div class="row"><input class="txt" style="min-width:200px" data-m="w.text" data-r="'+d.k+'" data-c="'+i+'" value="'+esc(t.text)+'" placeholder="Task">'+
+         '<input class="txt" style="min-width:180px" data-m="w.note" data-r="'+d.k+'" data-c="'+i+'" value="'+esc(t.note||'')+'" placeholder="Note (optional)">'+
+         '<button class="btn sm danger" data-act="delW" data-id="'+d.k+':'+i+'">Remove</button></div>'+
+         '<label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;font-weight:600;color:var(--mut)">'+
+         '<input type="checkbox" style="width:20px;height:20px" data-mchk="w.trail" data-r="'+d.k+'" data-c="'+i+'"'+(t.trail?' checked':'')+'> Also needs signing off in Trail</label>'+
+         photoCell('w',d.k+':'+i,t.img)+'</div>';
+    });
+    if(!(master.weekly[d.k]||[]).length){ h+='<p class="muted small" style="margin:0 0 6px">No tasks yet.</p>'; }
+    h+='<button class="btn sm" data-act="addW" data-id="'+d.k+'">Add task for '+esc(d.short)+'</button>';
+  });
+  h+='<label style="display:block;font-weight:700;margin:16px 0 4px">Footer note</label><textarea data-m="w.footer" style="min-height:56px">'+esc(master.weeklyFooter)+'</textarea></div></div>';
+
+  /* closedown */
+  h+='<div class="card" id="msec-closedown" style="--sc:#be123c">'+masterJumpNav('closedown','inline')+'<div class="sec-head"><h2>Daily closedown list</h2><span class="prog">One box per field</span></div>'+
+     '<div class="tblwrap"><table class="grid" style="min-width:900px"><thead><tr><th>Task</th><th>Method (short)</th><th>Detail shown on tap</th><th>Note</th><th>Photo</th><th></th></tr></thead><tbody>';
+  master.closedown.forEach(function(c,r){
+    h+='<tr><td><input class="txt" style="min-width:150px" data-m="c.task" data-r="'+r+'" value="'+esc(c.task)+'"></td>'+
+       '<td><input class="txt" style="min-width:150px" data-m="c.method" data-r="'+r+'" value="'+esc(c.method||'')+'"></td>'+
+       '<td><input class="txt" style="min-width:170px" data-m="c.detail" data-r="'+r+'" value="'+esc(c.detail||'')+'"></td>'+
+       '<td><input class="txt" style="min-width:150px" data-m="c.note" data-r="'+r+'" value="'+esc(c.note||'')+'"></td>'+
+       '<td>'+photoCell('c',r,c.img)+'</td>'+
+       '<td><button class="btn sm danger" data-act="delC" data-id="'+r+'">Delete</button></td></tr>';
+  });
+  h+='</tbody></table></div><div class="pad row"><button class="btn primary" data-act="addC">Add closedown task</button></div>'+
+     '<div class="pad" style="padding-top:0"><label style="display:block;font-weight:700;margin:0 0 4px">Closedown question</label><input class="txt" style="max-width:100%" data-m="tempQ" value="'+esc(master.tempQuestion)+'"></div></div>';
+
+  /* kitchen managers */
+  h+='<div class="card" id="msec-km" style="--sc:#9333ea">'+masterJumpNav('km','inline')+'<div class="sec-head"><h2>Kitchen Managers</h2><span class="prog">Full access — can alter anything and sign off anything</span></div><div class="pad">'+
+     '<p class="small muted">Kitchen Managers can open and change every part of Master, and their PIN also works anywhere a sign-off is asked for — chef, duty manager, defrost, handover — in place of a regular staff or duty manager PIN.</p>';
+  (master.kitchenManagers||[]).forEach(function(u,r){
+    h+='<div class="row" style="margin-bottom:8px"><input class="txt" style="max-width:180px" data-m="km.name" data-r="'+r+'" value="'+esc(u.name)+'" placeholder="Name">'+
+       '<input class="txt" style="max-width:120px" type="tel" data-m="km.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="PIN" onfocus="this.select()">'+
+       '<button class="btn sm danger" data-act="delKm" data-id="'+r+'">Remove</button></div>';
+  });
+  if(!(master.kitchenManagers||[]).length){ h+='<p class="muted small">No kitchen managers added yet.</p>'; }
+  h+='<button class="btn primary" data-act="addKm">Add kitchen manager</button></div></div>';
+
+  /* general managers */
+  h+='<div class="card" id="msec-gm" style="--sc:#9333ea">'+masterJumpNav('gm','inline')+'<div class="sec-head"><h2>General Managers</h2><span class="prog">Full access — can alter anything and sign off anything</span></div><div class="pad">'+
+     '<p class="small muted">Same access as Kitchen Managers above — full access to Master, and can sign off anywhere a sign-off is asked for.</p>';
+  (master.generalManagers||[]).forEach(function(u,r){
+    h+='<div class="row" style="margin-bottom:8px"><input class="txt" style="max-width:180px" data-m="gm.name" data-r="'+r+'" value="'+esc(u.name)+'" placeholder="Name">'+
+       '<input class="txt" style="max-width:120px" type="tel" data-m="gm.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="PIN" onfocus="this.select()">'+
+       '<button class="btn sm danger" data-act="delGm" data-id="'+r+'">Remove</button></div>';
+  });
+  if(!(master.generalManagers||[]).length){ h+='<p class="muted small">No general managers added yet.</p>'; }
+  h+='<button class="btn primary" data-act="addGm">Add general manager</button></div></div>';
+  }
+
+  /* staff */
+  h+='<div class="card" id="msec-staff" style="--sc:#0f766e">'+masterJumpNav('staff','inline')+'<div class="sec-head"><h2>Staff</h2><span class="prog">Names &amp; PINs shown on the login screen</span></div><div class="pad">'+
+     '<p class="small muted">Add anyone who should be able to log in on a tablet and tick off tasks. Each person should keep their own PIN private — it\'s what stamps their name on completed jobs.</p>';
+  (master.users||[]).forEach(function(u,r){
+    h+='<div class="row" style="margin-bottom:8px"><input class="txt" style="max-width:180px" data-m="u.name" data-r="'+r+'" value="'+esc(u.name)+'" placeholder="Name">'+
+       '<input class="txt" style="max-width:120px" type="tel" data-m="u.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="PIN" onfocus="this.select()">'+
+       '<button class="btn sm danger" data-act="delUser" data-id="'+r+'">Remove</button></div>';
+  });
+  if(!(master.users||[]).length){ h+='<p class="muted small">No staff added yet.</p>'; }
+  h+='<button class="btn primary" data-act="addUser">Add staff member</button></div></div>';
+
+  /* duty managers */
+  if(full){
+  h+='<div class="card" id="msec-dm" style="--sc:#0f766e">'+masterJumpNav('dm','inline')+'<div class="sec-head"><h2>Duty Managers</h2><span class="prog">Separate PIN, asked for at the moment of sign-off</span></div><div class="pad">'+
+     '<p class="small muted">These names and PINs are only used for the duty manager sign-off at closedown — kept separate from the staff list above so signing off requires the duty manager\'s own PIN, not just whoever is logged in on the tablet.</p>';
+  (master.dutyManagers||[]).forEach(function(u,r){
+    h+='<div class="row" style="margin-bottom:8px"><input class="txt" style="max-width:180px" data-m="dm.name" data-r="'+r+'" value="'+esc(u.name)+'" placeholder="Name">'+
+       '<input class="txt" style="max-width:120px" type="tel" data-m="dm.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="PIN" onfocus="this.select()">'+
+       '<button class="btn sm danger" data-act="delDm" data-id="'+r+'">Remove</button></div>';
+  });
+  if(!(master.dutyManagers||[]).length){ h+='<p class="muted small">No duty managers added yet.</p>'; }
+  h+='<button class="btn primary" data-act="addDm">Add duty manager</button></div></div>';
+  }
+
+  /* bookings */
+  h+='<div class="card" id="msec-bookings" style="--sc:#b45309">'+masterJumpNav('bookings','inline')+'<div class="sec-head"><h2>Bookings</h2><span class="prog">Uploaded per date, as a PDF</span></div><div class="pad">'+
+     '<p class="small muted">Upload a run sheet PDF for a specific date — it\'s stored exactly as uploaded (nothing is read or parsed out of it, so nothing can be misread). A "Show today\'s bookings" button then appears on that date\'s day page, with a reminder that it\'s a snapshot, not live.</p>'+
+     '<div class="row"><input class="txt" data-m="bookingsUrl" value="'+esc(master.bookingsSourceUrl||'')+'" placeholder="Optional: paste the live run sheet link, e.g. from DesignMyNight" style="max-width:460px"></div>'+
+     '<div class="row" style="margin-top:14px;align-items:flex-end">'+
+     '<div><label class="small muted" style="display:block">Date this PDF is for</label><input class="txt" type="date" id="bkUploadDate" value="'+esc(iso(new Date()))+'"></div>'+
+     '<button type="button" class="btn primary" data-act="pickBookingsPdf">Choose PDF</button>'+
+     '<input type="file" accept="application/pdf" id="bookingsPdfInput" style="display:none"></div>';
+
+  h+='<div style="margin-top:16px">';
+  var bkDates=Object.keys(master.bookings||{}).sort();
+  if(!bkDates.length){ h+='<p class="muted small">No bookings uploaded yet.</p>'; }
+  bkDates.forEach(function(dISO){
+    var b=master.bookings[dISO];
+    h+='<div class="arow"><div><div class="n">'+esc(shortDate(new Date(dISO)))+'</div>'+
+       '<div class="small muted">'+esc(b.fileName||'PDF')+' &middot; uploaded '+esc(b.uploadedAt||'')+'</div></div>'+
+       '<div class="btns"><button class="btn sm" data-act="viewBookingsDate" data-id="'+esc(dISO)+'">Preview</button>'+
+       '<button class="btn sm danger" data-act="delBookingsDate" data-id="'+esc(dISO)+'">Remove</button></div></div>';
+  });
+  h+='</div></div></div>';
+
+  /* messages */
+  if(full){
+  var everyone=[].concat(
+    (master.users||[]).map(function(u){ return {name:u.name, role:'Staff'}; }),
+    (master.dutyManagers||[]).map(function(u){ return {name:u.name, role:'Duty Manager'}; }),
+    (master.kitchenManagers||[]).map(function(u){ return {name:u.name, role:'Kitchen Manager'}; }),
+    (master.generalManagers||[]).map(function(u){ return {name:u.name, role:'General Manager'}; })
+  );
+  h+='<div class="card" id="msec-msg" style="--sc:#0e7490">'+masterJumpNav('msg','inline')+'<div class="sec-head"><h2>Messages</h2><span class="prog">Shown once, next time they log in</span></div><div class="pad">'+
+     '<p class="small muted">Only Kitchen and General Managers can leave these. Pick anyone with a PIN and they\'ll see it the next time they log in or unlock Master — after that it\'s cleared.</p>'+
+     '<div class="row"><select class="txt" id="msgTo" style="max-width:240px">';
+  if(!everyone.length){ h+='<option value="">No one set up yet</option>'; }
+  everyone.forEach(function(p){ h+='<option value="'+esc(p.name)+'">'+esc(p.name)+' ('+esc(p.role)+')</option>'; });
+  h+='</select></div>'+
+     '<textarea id="msgText" style="min-height:70px;margin-top:10px" placeholder="Message"></textarea>'+
+     '<div class="row" style="margin-top:10px"><button class="btn primary" data-act="sendMessage">Send message</button></div>';
+
+  var pendingMsgs=(master.messages||[]).filter(function(m){ return !m.read; });
+  h+='<div style="margin-top:16px">';
+  if(!pendingMsgs.length){ h+='<p class="muted small">No messages waiting to be delivered.</p>'; }
+  pendingMsgs.forEach(function(m){
+    h+='<div class="arow"><div><div class="n">To '+esc(m.to)+'</div><div class="small muted">'+esc(m.text)+'<br>From '+esc(m.from)+' &middot; '+esc(m.at)+'</div></div>'+
+       '<div class="btns"><button class="btn sm danger" data-act="delMessage" data-id="'+esc(m.id)+'">Cancel</button></div></div>';
+  });
+  h+='</div></div></div>';
+  }
+
+  /* settings */
+  if(full){
+  h+='<div class="card" id="msec-settings" style="--sc:#334155">'+masterJumpNav('settings','inline')+'<div class="sec-head"><h2>Settings</h2></div><div class="pad">'+
+     '<div class="row"><button class="btn" data-act="expMaster">Download master tables</button>'+
+     '<button class="btn" data-act="impMaster">Restore master tables from file</button>'+
+     '<button class="btn danger" data-act="resetMaster">Reset to original sheets</button></div>'+
+     '<p class="small muted" style="margin-top:14px">Build 2026-07-31b</p></div></div>';
+
+  h+='<div class="card"><div class="sec-head"><h2>Shared database</h2><span class="prog">'+esc(syncLabel()||'Not yet synced')+'</span></div><div class="pad">'+
+     '<p class="small muted">If this kitchen\'s Netlify site has a shared database key set, every tablet needs to enter it once so they all read and write the same data. Leave blank if no key was set up.</p>'+
+     '<div class="row"><input class="txt" id="siteKeyIn" placeholder="Shared database key" value="'+esc(SITE_KEY)+'">'+
+     '<button class="btn primary" data-act="saveSiteKey">Save &amp; sync now</button></div></div></div>';
+  }
+  return h;
+}
+
+/* =====================================================================
+   RECORDS (archive)
+   ===================================================================== */
+function renderRecords(){
+  var idx=lsGet(KEY_IDX,[]), strays=strayWeeks();
+  var h='<div class="card"><div class="sec-head"><h2>This week</h2></div><div class="pad">'+
+    '<p>Week commencing <b>'+esc(shortDate(weekStart))+'</b>. Everything staff enter is saved on this tablet as they go.</p>'+
+    '<div class="row"><button class="btn" data-act="dlWeekCsv">Download this week (CSV)</button>'+
+    '<button class="btn" data-act="dlWeekJson">Download this week (file)</button></div>'+
+    '<div class="row" style="margin-top:16px"><button class="btn ok" data-act="endWeek">End week &amp; start a fresh one</button></div>'+
+    '<p class="small muted" style="margin-top:8px">This files the week into the records below, carries Sunday\u2019s handover into next Monday, and opens a blank set of sheets. Master pars are kept.</p>'+
+    '</div></div>';
+
+  if(strays.length){
+    h+='<div class="banner warn"><b>Unfiled week'+(strays.length>1?'s':'')+' found:</b> '+strays.map(esc).join(', ')+
+       '. <button class="btn sm" data-act="fileStrays" style="margin-left:8px">File them into records</button></div>';
+  }
+
+  h+='<div class="card"><div class="sec-head"><h2>Filed weeks</h2><span class="prog">'+idx.length+' held on this tablet</span></div>';
+  if(!idx.length){ h+='<div class="pad muted">Nothing filed yet.</div>'; }
+  idx.slice().reverse().forEach(function(a){
+    h+='<div class="arow"><div><div class="n">Week commencing '+esc(a.label||a.weekKey)+'</div>'+
+       '<div class="small muted">Filed '+esc(a.at)+'</div></div>'+
+       '<div class="btns"><button class="btn sm" data-act="dlArcCsv" data-id="'+esc(a.weekKey)+'">CSV</button>'+
+       '<button class="btn sm" data-act="dlArcJson" data-id="'+esc(a.weekKey)+'">File</button>'+
+       '<button class="btn sm" data-act="viewArc" data-id="'+esc(a.weekKey)+'">Summary</button>'+
+       '<button class="btn sm danger" data-act="restoreArc" data-id="'+esc(a.weekKey)+'">Restore as current week</button></div></div>';
+  });
+  h+='</div>';
+
+  h+='<div class="card"><div class="sec-head"><h2>Backups</h2></div><div class="pad">'+
+     '<p class="small muted">Records are kept on this tablet for about 13 months, then the oldest are dropped automatically. Download the full backup somewhere safe now and then — if the tablet is wiped or replaced, the browser storage goes with it.</p>'+
+     '<div class="row"><button class="btn primary" data-act="dlAll">Download everything (full backup)</button>'+
+     '<button class="btn" data-act="impAll">Restore from a full backup</button></div></div></div>';
+  return h;
+}
+
+/* =====================================================================
+   RENDER
+   ===================================================================== */
+function render(){
+  renderTabs();
+  renderUserBar();
+  var v=el('view');
+  if(ui.tab==='master') v.innerHTML=renderMaster();
+  else if(ui.tab==='records') v.innerHTML=renderRecords();
+  else v.innerHTML=renderDay(ui.tab);
+  updateProgress();
+  applyScrollOffset();
+}
+function applyScrollOffset(){
+  var hdr=document.querySelector('header.app');
+  if(!hdr) return;
+  var offset=hdr.offsetHeight+10;
+  document.querySelectorAll('[id^="sec-"]').forEach(function(elm){ elm.style.scrollMarginTop=offset+'px'; });
+}
+window.addEventListener('resize',applyScrollOffset);
+function sectionCounts(dk,st){
+  var di=DK.indexOf(dk);
+  var dOut=0,dNeed=0;
+  master.defrost.forEach(function(it){ var r=st.defrost[it.id]||{}; var need=num(it.lv[di])-(num(r.on)+num(r.bk));
+    if(need>0){ dNeed++; if(r.out) dOut++; } });
+  var md=0; (master.morning||[]).forEach(function(mi){ if(((st.morning||{})[mi.id]||{}).done) md++; });
+  var pd=0; master.prep.forEach(function(p){ if((st.prep[p.id]||{}).done) pd++; });
+  var wl=master.weekly[dk]||[], wd=0; wl.forEach(function(t,i){ if((st.weekly[i]||{}).done) wd++; });
+  var cd=0; master.closedown.forEach(function(c){ if((st.closedown[c.id]||{}).done) cd++; });
+  return {
+    morning:{done:md,total:(master.morning||[]).length},
+    prep:{done:pd,total:master.prep.length},
+    weekly:{done:wd,total:wl.length},
+    defrost:{done:dOut,total:dNeed},
+    closedown:{done:cd,total:master.closedown.length}
+  };
+}
+function sectionComplete(key,counts){ var c=counts[key]; return !!(c&&c.total>0&&c.done>=c.total); }
+function isSectionOpen(key,complete){
+  var ov=ui.collapsed[key];
+  if(ov===true) return false;
+  if(ov===false) return true;
+  return !complete;
+}
+function updateProgress(){
+  if(ui.tab==='master'||ui.tab==='records') return;
+  var dk=ui.tab, st=week.days[dk];
+  var c=sectionCounts(dk,st);
+  if(el('pMorning')) el('pMorning').textContent = c.morning.done+' of '+c.morning.total+' done';
+  if(el('pDefrost')) el('pDefrost').textContent = c.defrost.total? (c.defrost.done+' of '+c.defrost.total+' pulled') : 'nothing to pull';
+  if(el('pPrep'))    el('pPrep').textContent    = c.prep.done+' of '+c.prep.total+' done';
+  if(el('pWeekly'))  el('pWeekly').textContent  = c.weekly.total? (c.weekly.done+' of '+c.weekly.total+' done') : '';
+  if(el('pClose'))   el('pClose').textContent   = c.closedown.done+' of '+c.closedown.total+' done';
+}
+
+/* =====================================================================
+   INPUT HANDLING — day sheets
+   ===================================================================== */
+el('view').addEventListener('input',function(e){
+  var t=e.target, f=t.getAttribute('data-f'), m=t.getAttribute('data-m');
+  if(f) return handleDayInput(t,f);
+  if(m) return handleMasterInput(t,m);
+});
+function isAttributed(f){ return f==='m.done'||f==='w.done'||f==='c.done'; }
+el('view').addEventListener('change',function(e){
+  var t=e.target;
+  if(t.type==='checkbox'&&t.getAttribute('data-f')){
+    var f=t.getAttribute('data-f');
+    if(isAttributed(f)&&t.checked&&!session){
+      t.checked=false;
+      requireUser(function(){ t.checked=true; handleDayInput(t,f); render(); });
+      return;
+    }
+    handleDayInput(t,f);
+    if(isAttributed(f)) render();
+  }
+  if(t.type==='checkbox'&&t.getAttribute('data-mchk')==='w.trail'){
+    var wr=t.getAttribute('data-r'), wc=t.getAttribute('data-c');
+    master.weekly[wr]=master.weekly[wr]||[];
+    master.weekly[wr][wc]=master.weekly[wr][wc]||{text:'',note:''};
+    master.weekly[wr][wc].trail=t.checked;
+    saveMaster();
+  }
+  if(t.type==='file'&&t.getAttribute('data-photo')){
+    var list=t.getAttribute('data-photo'), r=t.getAttribute('data-r');
+    var file=t.files&&t.files[0]; if(!file) return;
+    if(!/^image\//.test(file.type)){ alert('Please choose a photo.'); return; }
+    compressImageFile(file,function(dataUrl){ setItemImg(list,r,dataUrl); saveMaster(); render(); },
+      function(){ alert('Could not read that photo — try a different one.'); });
+  }
+  if(t.id==='bookingsPdfInput'&&t.type==='file'){
+    var pf=t.files&&t.files[0]; if(!pf) return;
+    if(pf.type!=='application/pdf'){ alert('Please choose a PDF file.'); t.value=''; return; }
+    var dEl=el('bkUploadDate'), dateVal=dEl?dEl.value:'';
+    if(!dateVal){ alert('Pick the date this PDF is for first.'); t.value=''; return; }
+    if(pf.size>8*1024*1024){ alert('That PDF is quite large (over 8MB) — it may be slow to upload. A smaller export would work better if you have one.'); }
+    handleBookingsUpload(pf,dateVal);
+    t.value='';
+  }
+  if(t.id==='noticeImgInput'&&t.type==='file'){
+    var nf=t.files&&t.files[0]; if(!nf) return;
+    if(!/^image\//.test(nf.type)){ alert('Please choose a photo.'); return; }
+    compressImageFile(nf,function(dataUrl){
+      noticeDraftImg=dataUrl;
+      var savedTxt=el('noticeText')?el('noticeText').value:'';
+      render();
+      var txtEl=el('noticeText'); if(txtEl) txtEl.value=savedTxt;
+    }, function(){ alert('Could not read that photo — try a different one.'); });
+  }
+});
+
+function compressImageFile(file,cb,onerr){
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var img=new Image();
+    img.onload=function(){
+      var maxDim=820, w=img.width, h=img.height;
+      if(w>h && w>maxDim){ h=Math.round(h*maxDim/w); w=maxDim; }
+      else if(h>=w && h>maxDim){ w=Math.round(w*maxDim/h); h=maxDim; }
+      var cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      cb(cv.toDataURL('image/jpeg',0.55));
+    };
+    img.onerror=onerr;
+    img.src=e.target.result;
+  };
+  reader.onerror=onerr;
+  reader.readAsDataURL(file);
+}
+function setItemImg(list,r,dataUrl){
+  if(list==='d') master.defrost[r].img=dataUrl;
+  else if(list==='p') master.prep[r].img=dataUrl;
+  else if(list==='mo') master.morning[r].img=dataUrl;
+  else if(list==='c') master.closedown[r].img=dataUrl;
+  else if(list==='w'){ var wp=String(r).split(':'); if(master.weekly[wp[0]]&&master.weekly[wp[0]][wp[1]]) master.weekly[wp[0]][wp[1]].img=dataUrl; }
+}
+function clearItemImg(list,r){
+  if(list==='d') delete master.defrost[r].img;
+  else if(list==='p') delete master.prep[r].img;
+  else if(list==='mo') delete master.morning[r].img;
+  else if(list==='c') delete master.closedown[r].img;
+  else if(list==='w'){ var wp=String(r).split(':'); if(master.weekly[wp[0]]&&master.weekly[wp[0]][wp[1]]) delete master.weekly[wp[0]][wp[1]].img; }
+}
+function photoCell(list,r,imgVal){
+  var uid='pf_'+list+'_'+r;
+  return '<div style="display:flex;align-items:center;gap:6px;margin-top:4px">'+
+    (imgVal?'<img src="'+imgVal+'" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--line)">':'')+
+    '<button type="button" class="btn sm" data-act="pickPhoto" data-id="'+list+':'+r+'">'+(imgVal?'Change photo':'Add photo')+'</button>'+
+    (imgVal?'<button type="button" class="btn sm danger" data-act="delPhoto" data-id="'+list+':'+r+'">Remove</button>':'')+
+    '<input type="file" accept="image/*" id="'+uid+'" data-photo="'+list+'" data-r="'+r+'" style="display:none">'+
+    '</div>';
+}
+
+function handleDayInput(t,f){
+  var dk=ui.tab, di=DK.indexOf(dk); if(di<0) return;
+  var st=week.days[dk], id=t.getAttribute('data-id');
+  if(f==='temp'){ st.temp=t.value; }
+  else if(f.indexOf('m.')===0){
+    st.morning=st.morning||{};
+    st.morning[id]=st.morning[id]||{};
+    if(f==='m.done'){
+      st.morning[id].done=t.checked;
+      if(t.checked){ st.morning[id].ini=session?session.name:''; st.morning[id].at=stamp(); }
+      else { st.morning[id].ini=''; st.morning[id].at=''; }
+    }
+  }
+  else if(f.indexOf('d.')===0){
+    st.defrost[id]=st.defrost[id]||{};
+    if(f==='d.on') st.defrost[id].on=t.value;
+    if(f==='d.bk') st.defrost[id].bk=t.value;
+    if(f==='d.out') st.defrost[id].out=t.checked;
+    var it=master.defrost.filter(function(x){return x.id===id;})[0];
+    if(it){ var need=num(it.lv[di])-(num(st.defrost[id].on)+num(st.defrost[id].bk));
+      var cell=document.querySelector('[data-need="'+id+'"]');
+      if(cell) cell.innerHTML = need>0?'<span class="pill need">'+fmt(need)+'</span>':(need===0?'<span class="pill zero">ok</span>':'<span class="pill over">'+fmt(-need)+' over</span>'); }
+  }
+  else if(f.indexOf('p.')===0){
+    st.prep[id]=st.prep[id]||{};
+    if(f==='p.have') st.prep[id].have=t.value;
+    if(f==='p.done'){ st.prep[id].done=t.checked; t.closest('tr'); }
+    var p=master.prep.filter(function(x){return x.id===id;})[0];
+    if(p&&!p.task){ var mk=num(p.tg[di])-num(st.prep[id].have);
+      var c2=document.querySelector('[data-make="'+id+'"]');
+      if(c2) c2.innerHTML = mk>0?'<span class="pill need">'+fmt(mk)+'</span>':'<span class="pill zero">ok</span>'; }
+  }
+  else if(f.indexOf('w.')===0){
+    st.weekly[id]=st.weekly[id]||{};
+    if(f==='w.done'){
+      st.weekly[id].done=t.checked;
+      if(t.checked){ st.weekly[id].ini=session?session.name:''; st.weekly[id].at=stamp(); }
+      else { st.weekly[id].ini=''; st.weekly[id].at=''; }
+    }
+  }
+  else if(f.indexOf('c.')===0){
+    st.closedown[id]=st.closedown[id]||{};
+    if(f==='c.done'){
+      st.closedown[id].done=t.checked;
+      if(t.checked){ st.closedown[id].ini=session?session.name:''; st.closedown[id].at=stamp(); }
+      else { st.closedown[id].ini=''; st.closedown[id].at=''; }
+    }
+  }
+  saveWeek(); updateProgress();
+}
+
+/* =====================================================================
+   INPUT HANDLING — master
+   ===================================================================== */
+function handleMasterInput(t,m){
+  var r=t.getAttribute('data-r'), c=t.getAttribute('data-c');
+  if(m==='d.name') master.defrost[r].name=t.value;
+  else if(m==='d.uom') master.defrost[r].uom=t.value;
+  else if(m==='d.note') master.defrost[r].note=t.value;
+  else if(m==='d.lv') master.defrost[r].lv[c]=t.value===''?0:num(t.value);
+  else if(m==='p.name') master.prep[r].name=t.value;
+  else if(m==='p.uom') master.prep[r].uom=t.value;
+  else if(m==='p.detail') master.prep[r].detail=t.value;
+  else if(m==='p.tg') master.prep[r].tg[c]=t.value===''?0:num(t.value);
+  else if(m==='mo.intro') master.morningNote=t.value;
+  else if(m==='mo.task') master.morning[r].task=t.value;
+  else if(m==='mo.method'){ if(!master.morning[r].byDay) master.morning[r].method=t.value; }
+  else if(m==='mo.note') master.morning[r].note=t.value;
+  else if(m==='mo.byDay'){
+    var mi=master.morning[r];
+    if(!mi.byDay) mi.byDay=['','','','','','',''];
+    mi.byDay[c]=t.value;
+    delete mi.method;
+  }
+  else if(m==='w.text'){ master.weekly[r]=master.weekly[r]||[]; master.weekly[r][c]=master.weekly[r][c]||{text:'',note:''}; master.weekly[r][c].text=t.value; }
+  else if(m==='w.note'){ master.weekly[r]=master.weekly[r]||[]; master.weekly[r][c]=master.weekly[r][c]||{text:'',note:''}; master.weekly[r][c].note=t.value; }
+  else if(m==='w.footer') master.weeklyFooter=t.value;
+  else if(m==='tempQ') master.tempQuestion=t.value;
+  else if(m==='km.name'){ master.kitchenManagers[r].name=t.value; }
+  else if(m==='km.pin'){ master.kitchenManagers[r].pin=t.value; }
+  else if(m==='gm.name'){ master.generalManagers[r].name=t.value; }
+  else if(m==='gm.pin'){ master.generalManagers[r].pin=t.value; }
+  else if(m==='u.name'){ master.users[r].name=t.value; }
+  else if(m==='u.pin'){ master.users[r].pin=t.value; }
+  else if(m==='dm.name'){ master.dutyManagers[r].name=t.value; }
+  else if(m==='dm.pin'){ master.dutyManagers[r].pin=t.value; }
+  else if(m==='bookingsUrl') master.bookingsSourceUrl=t.value;
+  else if(m==='c.task') master.closedown[r].task=t.value;
+  else if(m==='c.method') master.closedown[r].method=t.value;
+  else if(m==='c.detail') master.closedown[r].detail=t.value;
+  else if(m==='c.note') master.closedown[r].note=t.value;
+  saveMaster();
+}
+
+/* =====================================================================
+   ACTIONS
+   ===================================================================== */
+el('view').addEventListener('click',function(e){
+  var inf=e.target.closest('[data-info]');
+  if(inf){ return showInfo(inf.getAttribute('data-info')); }
+  var b=e.target.closest('[data-act]'); if(!b) return;
+  var act=b.getAttribute('data-act'), id=b.getAttribute('data-id');
+  var dk=ui.tab, st=(DK.indexOf(dk)>=0)?week.days[dk]:null;
+
+  if(act==='ack'){
+    requireUser(function(){ st.ack={ini:session.name,at:stamp()}; saveWeek(); render(); });
+  }
+  else if(act==='addNote'){
+    var tx=el('noteText');
+    if(!tx.value.trim()) return alert('Type the note first.');
+    var txt=tx.value.trim();
+    requireUser(function(){ st.notes.push({text:txt,by:session.name,at:stamp()}); saveWeek(); render(); });
+  }
+  else if(act==='delNote'){ st.notes.splice(parseInt(id,10),1); saveWeek(); render(); }
+  else if(act==='addNotice'){
+    var ntx=el('noticeText');
+    if(!ntx||!ntx.value.trim()) return alert('Type the notice first.');
+    var ntxt=ntx.value.trim();
+    var ntxImg=noticeDraftImg;
+    requireManager(function(name){
+      master.notices=master.notices||[];
+      var rec={id:'nt'+Date.now()+Math.random().toString(36).slice(2,5), text:ntxt, from:name, at:stamp()};
+      if(ntxImg) rec.img=ntxImg;
+      master.notices.push(rec);
+      noticeDraftImg=null;
+      saveMaster(); render();
+    });
+  }
+  else if(act==='delNotice'){
+    requireManager(function(){
+      master.notices=(master.notices||[]).filter(function(n){ return n.id!==id; });
+      saveMaster(); render();
+    });
+  }
+  else if(act==='pickNoticeImg'){ var nfi=el('noticeImgInput'); if(nfi) nfi.click(); }
+  else if(act==='clearNoticeImg'){
+    noticeDraftImg=null;
+    var savedTxt2=el('noticeText')?el('noticeText').value:'';
+    render();
+    var txtEl3=el('noticeText'); if(txtEl3) txtEl3.value=savedTxt2;
+  }
+  else if(act==='viewNoticeImg'){
+    var nItem=(master.notices||[]).filter(function(n){ return n.id===id; })[0];
+    if(nItem&&nItem.img) showModal('Photo','<img src="'+nItem.img+'" style="max-width:100%;border-radius:10px;display:block">');
+  }
+  else if(act==='signChef'){
+    requireUser(function(){ st.chef={ini:session.name,at:stamp()}; saveWeek(); render(); });
+  }
+  else if(act==='signDefrost'){
+    requireUser(function(){ st.defrostBy={ini:session.name,at:stamp()}; saveWeek(); render(); });
+  }
+  else if(act==='signDm'){
+    requireDm(function(name){ st.dm={ini:name,at:stamp()}; saveWeek(); render(); });
+  }
+  else if(act==='showBookings'){
+    var di3=DK.indexOf(dk);
+    if(di3>=0) showBookingsModal(iso(addDays(weekStart,di3)));
+  }
+  else if(act==='printSection'){ printSection(id); }
+  else if(act==='toggleSection'){
+    if(st){
+      var counts2=sectionCounts(dk,st);
+      var wasOpen=isSectionOpen(id,sectionComplete(id,counts2));
+      ui.collapsed[id]=wasOpen?true:false;
+      render();
+    }
+  }
+  else if(act==='closeDay'){
+    var open=openTasksFor(dk);
+    var go=open.length? confirm(open.length+' item(s) are still not ticked. Mark the day complete anyway? They will show on tomorrow\u2019s handover.') : true;
+    if(!go) return;
+    st.closed=true; st.closedAt=stamp(); saveWeek(); render();
+  }
+  else if(act==='reopen'){ st.closed=false; st.closedAt=''; saveWeek(); render(); }
+
+  /* master */
+  else if(act==='unlock'){
+    var found=findAdminByPin(el('pinIn').value);
+    if(found){ ui.adminLevel=found.level; ui.adminName=found.name; render(); deliverMessagesFor(found.name); }
+    else alert('Wrong PIN.');
+  }
+  else if(act==='lock'){ ui.adminLevel=null; ui.adminName=''; render(); }
+  else if(act==='saveSiteKey'){
+    SITE_KEY=el('siteKeyIn').value.trim();
+    try{ localStorage.setItem('kw.sitekey',SITE_KEY); }catch(e){}
+    boot(); render();
+  }
+  else if(act==='addD'){
+    master.defrost.push({id:'d'+Date.now(),name:'New item',uom:'each',lv:[0,0,0,0,0,0,0]}); saveMaster(); render();
+  }
+  else if(act==='delD'){ if(confirm('Remove '+master.defrost[id].name+' from the defrost sheet?')){ master.defrost.splice(id,1); saveMaster(); render(); } }
+  else if(act==='addM'){
+    master.morning.push({id:'m'+Date.now(),task:'New job',method:''}); saveMaster(); render();
+  }
+  else if(act==='delM'){ if(confirm('Remove '+master.morning[id].task+' from the morning cleaning list?')){ master.morning.splice(id,1); saveMaster(); render(); } }
+  else if(act==='addP'){
+    master.prep.push({id:'p'+Date.now(),name:'New item',uom:'each',detail:'',tg:[0,0,0,0,0,0,0]}); saveMaster(); render();
+  }
+  else if(act==='delP'){ if(confirm('Remove '+master.prep[id].name+' from the prep sheet?')){ master.prep.splice(id,1); saveMaster(); render(); } }
+  else if(act==='addC'){
+    master.closedown.push({id:'c'+Date.now(),task:'New task',method:'',detail:'',note:''}); saveMaster(); render();
+  }
+  else if(act==='delC'){ if(confirm('Remove '+master.closedown[id].task+' from the closedown list?')){ master.closedown.splice(id,1); saveMaster(); render(); } }
+  else if(act==='addW'){
+    master.weekly[id]=master.weekly[id]||[]; master.weekly[id].push({text:'',note:''}); saveMaster(); render();
+  }
+  else if(act==='delW'){
+    var wp=id.split(':'), wk=wp[0], wi=parseInt(wp[1],10);
+    if(master.weekly[wk]){ master.weekly[wk].splice(wi,1); saveMaster(); render(); }
+  }
+  else if(act==='addUser'){ master.users=master.users||[]; master.users.push({name:'New staff',pin:'1111'}); saveMaster(); render(); }
+  else if(act==='delUser'){ if(confirm('Remove '+master.users[id].name+' from staff?')){ master.users.splice(id,1); saveMaster(); render(); } }
+  else if(act==='addDm'){ master.dutyManagers=master.dutyManagers||[]; master.dutyManagers.push({name:'New duty manager',pin:'2222'}); saveMaster(); render(); }
+  else if(act==='delDm'){ if(confirm('Remove '+master.dutyManagers[id].name+' from duty managers?')){ master.dutyManagers.splice(id,1); saveMaster(); render(); } }
+  else if(act==='addKm'){ master.kitchenManagers=master.kitchenManagers||[]; master.kitchenManagers.push({name:'New kitchen manager',pin:'3333'}); saveMaster(); render(); }
+  else if(act==='delKm'){
+    if(master.kitchenManagers.length<=1 && !(master.generalManagers&&master.generalManagers.length)){ alert('Keep at least one Kitchen or General Manager, or you\u2019ll lock everyone out of Master.'); return; }
+    if(confirm('Remove '+master.kitchenManagers[id].name+' from kitchen managers?')){ master.kitchenManagers.splice(id,1); saveMaster(); render(); }
+  }
+  else if(act==='addGm'){ master.generalManagers=master.generalManagers||[]; master.generalManagers.push({name:'New general manager',pin:'4444'}); saveMaster(); render(); }
+  else if(act==='delGm'){
+    if(master.generalManagers.length<=1 && !(master.kitchenManagers&&master.kitchenManagers.length)){ alert('Keep at least one Kitchen or General Manager, or you\u2019ll lock everyone out of Master.'); return; }
+    if(confirm('Remove '+master.generalManagers[id].name+' from general managers?')){ master.generalManagers.splice(id,1); saveMaster(); render(); }
+  }
+  else if(act==='pickBookingsPdf'){ var fi=el('bookingsPdfInput'); if(fi) fi.click(); }
+  else if(act==='viewBookingsDate'){ showBookingsModal(id); }
+  else if(act==='delBookingsDate'){
+    if(confirm('Remove the saved bookings for '+shortDate(new Date(id))+'?')){ delete master.bookings[id]; saveMaster(); render(); }
+  }
+  else if(act==='sendMessage'){
+    var toSel=el('msgTo'), msgTxt=el('msgText');
+    if(!toSel||!toSel.value){ alert('Pick who this message is for.'); return; }
+    if(!msgTxt||!msgTxt.value.trim()){ alert('Type a message first.'); return; }
+    master.messages=master.messages||[];
+    master.messages.push({
+      id:'msg'+Date.now()+Math.random().toString(36).slice(2,6),
+      to:toSel.value, from:ui.adminName||'Manager', text:msgTxt.value.trim(), at:stamp(), read:false
+    });
+    saveMaster();
+    var sentTo=toSel.value;
+    render();
+    alert('Message queued for '+sentTo+'.');
+  }
+  else if(act==='delMessage'){
+    master.messages=(master.messages||[]).filter(function(m){ return m.id!==id; });
+    saveMaster(); render();
+  }
+  else if(act==='resetMaster'){ if(confirm('Reset all master tables back to the original spreadsheets? Pars you have changed will be lost.')){ master=DEFAULT_MASTER(); saveMaster(); render(); } }
+  else if(act==='expMaster'){ dl('kitchen-master-'+iso(new Date())+'.json', JSON.stringify(master,null,2), 'application/json'); }
+  else if(act==='impMaster'){ pick(function(txt){ try{ var o=JSON.parse(txt); if(!o.defrost) throw 0; master=o;
+    if((!master.kitchenManagers||!master.kitchenManagers.length) && master.pin){ master.kitchenManagers=[{name:'Kitchen Manager', pin:master.pin}]; }
+    saveMaster(); render(); alert('Master tables restored.'); }catch(err){ alert('That file could not be read.'); } }); }
+  else if(act==='pickPhoto'){ var fi=document.getElementById('pf_'+id.replace(':','_')); if(fi) fi.click(); }
+  else if(act==='delPhoto'){
+    var ci=id.indexOf(':'); clearItemImg(id.slice(0,ci),id.slice(ci+1)); saveMaster(); render();
+  }
+
+  /* records */
+  else if(act==='dlWeekCsv'){ dl('kitchen-week-'+weekKey+'.csv', weekCsv(week,master), 'text/csv'); }
+  else if(act==='dlWeekJson'){ dl('kitchen-week-'+weekKey+'.json', JSON.stringify({week:week,master:master},null,2), 'application/json'); }
+  else if(act==='endWeek'){ endWeek(); }
+  else if(act==='fileStrays'){ strayWeeks().forEach(function(wk){ fileWeek(wk); }); render(); alert('Filed.'); }
+  else if(act==='dlArcCsv'){ var a=lsGet(KEY_ARC+id,null); if(a) dl('kitchen-week-'+id+'.csv', weekCsv(a.week,a.master), 'text/csv'); }
+  else if(act==='dlArcJson'){ var a2=lsGet(KEY_ARC+id,null); if(a2) dl('kitchen-week-'+id+'.json', JSON.stringify(a2,null,2), 'application/json'); }
+  else if(act==='viewArc'){ var a3=lsGet(KEY_ARC+id,null); if(a3) showModal('Week commencing '+id, arcSummary(a3)); }
+  else if(act==='restoreArc'){ restoreWeek(id); }
+  else if(act==='dlAll'){
+    var out={exported:stamp(),master:master,current:week,archives:{}};
+    lsGet(KEY_IDX,[]).forEach(function(a){ out.archives[a.weekKey]=lsGet(KEY_ARC+a.weekKey,null); });
+    dl('kitchen-full-backup-'+iso(new Date())+'.json', JSON.stringify(out,null,2), 'application/json');
+  }
+  else if(act==='impAll'){ pick(function(txt){ try{
+      var o=JSON.parse(txt); if(!o.master) throw 0;
+      master=o.master; saveMaster();
+      var ix=[];
+      for(var k in (o.archives||{})){ var a=o.archives[k]; if(a){ lsSet(KEY_ARC+k,a); ix.push({weekKey:k,label:shortDate(new Date(k)),at:a.at||stamp()}); } }
+      lsSet(KEY_IDX,ix.sort(function(x,y){return x.weekKey<y.weekKey?-1:1;}));
+      alert('Backup restored.'); render();
+    }catch(err){ alert('That file could not be read.'); } }); }
+});
+
+function showInfo(ref){
+  var kind=ref.slice(0,1), id=ref.slice(2), title='', body='';
+  if(kind==='d'){ var it=master.defrost.filter(function(x){return x.id===id;})[0]; if(!it) return;
+    title=it.name; body='<b>How to count:</b> '+esc(it.uom)+(it.note?'<br><br>'+esc(it.note):'')+imgTag(it.img); }
+  if(kind==='p'){ var p=master.prep.filter(function(x){return x.id===id;})[0]; if(!p) return;
+    title=p.name; body='<b>Unit:</b> '+esc(p.uom)+(p.detail?'<br><br>'+esc(p.detail):'')+imgTag(p.img); }
+  if(kind==='m'){ var mi=master.morning.filter(function(x){return x.id===id;})[0]; if(!mi) return;
+    title=mi.task; body=(mi.detail?esc(mi.detail):'')+(mi.note?'<br><br><b>Note:</b> '+esc(mi.note):'')+imgTag(mi.img); }
+  if(kind==='w'){ var dk2=ui.tab, wi=(master.weekly[dk2]||[])[parseInt(id,10)]; if(!wi) return;
+    title=wi.text; body=(wi.note?'<b>Note:</b> '+esc(wi.note):'')+imgTag(wi.img); }
+  if(kind==='c'){ var c=master.closedown.filter(function(x){return x.id===id;})[0]; if(!c) return;
+    title=c.task; body=(c.method?'<b>Method:</b> '+esc(c.method):'')+(c.detail?'<br><br>'+esc(c.detail):'')+(c.note?'<br><br><b>Note:</b> '+esc(c.note):'')+imgTag(c.img); }
+  showModal(title,body);
+}
+function imgTag(src){ return src?'<div style="margin-top:12px"><img src="'+src+'" style="max-width:100%;border-radius:10px;display:block"></div>':''; }
+
+/* =====================================================================
+   WEEK ROLLOVER + EXPORT
+   ===================================================================== */
+function fileWeek(wk){
+  var w=lsGet(KEY_WEEK+wk,null); if(!w) return;
+  var rec={weekKey:wk,at:stamp(),week:w,master:JSON.parse(JSON.stringify(master))};
+  lsSet(KEY_ARC+wk,rec);
+  var idx=lsGet(KEY_IDX,[]);
+  idx=idx.filter(function(a){return a.weekKey!==wk;});
+  idx.push({weekKey:wk,label:shortDate(new Date(wk)),at:rec.at});
+  idx.sort(function(x,y){return x.weekKey<y.weekKey?-1:1;});
+  /* prune anything older than the retention window */
+  var cut=addDays(new Date(),-RETAIN_DAYS);
+  idx=idx.filter(function(a){
+    if(new Date(a.weekKey)<cut){ lsDelete(KEY_ARC+a.weekKey); return false; }
+    return true;
+  });
+  lsSet(KEY_IDX,idx);
+  lsDelete(KEY_WEEK+wk);
+  return w;
+}
+
+function endWeek(){
+  if(!confirm('File this week into the records and open a fresh set of sheets?\n\nSunday\u2019s handover notes and anything left unticked will carry into the new Monday.')) return;
+  /* offer the download first so there is always a copy off the tablet */
+  dl('kitchen-week-'+weekKey+'.csv', weekCsv(week,master), 'text/csv');
+  var sun=week.days.sun;
+  var handOn={from:weekKey,notes:sun.notes||[],open:openTasksFor('sun')};
+  fileWeek(weekKey);
+  lsSet(KEY_CARRY,handOn); carry=handOn;
+  weekStart=mondayOf(new Date()); 
+  if(iso(weekStart)===weekKey){ weekStart=addDays(weekStart,7); }
+  weekKey=iso(weekStart);
+  week=blankWeek(weekStart); saveWeek();
+  ui.tab=DK[todayIdx()]; render();
+  alert('New week started, commencing '+shortDate(weekStart)+'.');
+}
+function restoreWeek(wk){
+  var arc=lsGet(KEY_ARC+wk,null);
+  if(!arc){ alert('That record could not be found.'); return; }
+  var label=shortDate(new Date(wk));
+  if(!confirm('Undo and make the week commencing '+label+' the live working week again?\n\nWhatever is currently on the live sheets will be filed into records first, so nothing on there is lost either.')) return;
+  if(week && weekKey && weekKey!==wk){ fileWeek(weekKey); }
+  week=JSON.parse(JSON.stringify(arc.week));
+  weekKey=wk;
+  weekStart=new Date(wk);
+  lsSet(KEY_WEEK+weekKey,week);
+  lsDelete(KEY_ARC+wk);
+  var idx=lsGet(KEY_IDX,[]);
+  idx=idx.filter(function(a){ return a.weekKey!==wk; });
+  lsSet(KEY_IDX,idx);
+  ui.tab=DK[todayIdx()];
+  render();
+  alert('Restored \u2014 week commencing '+label+' is now the live working week.');
+}
+
+function csvRow(a){ return a.map(function(v){ v=(v===undefined||v===null)?'':String(v); return '"'+v.replace(/"/g,'""')+'"'; }).join(',')+'\n'; }
+
+function weekCsv(w,ms){
+  var out=csvRow(['Week commencing',shortDate(new Date(w.weekStart))]);
+  out+=csvRow(['Exported',stamp()]);
+  out+='\n';
+  out+=csvRow(['Day','Date','Section','Item','Unit','Par','On line / Have','Back up','Needed / To make','Done','Completed by','Note']);
+  DK.forEach(function(dk,di){
+    var st=w.days[dk], dt=shortDate(addDays(new Date(w.weekStart),di)), dl2=DAYS[di].label;
+    (ms.morning||[]).forEach(function(mi){ var r=(st.morning||{})[mi.id]||{}; var ml=mi.byDay?mi.byDay[di]:mi.method;
+      out+=csvRow([dl2,dt,'Morning cleaning',mi.task,'','','','','',r.done?'YES':'',r.ini||'',[ml,mi.note].filter(Boolean).join(' — ')]); });
+    ms.defrost.forEach(function(it){ var r=st.defrost[it.id]||{}; var need=num(it.lv[di])-(num(r.on)+num(r.bk));
+      out+=csvRow([dl2,dt,'Defrost',it.name,it.uom,it.lv[di],r.on,r.bk,fmt(need),r.out?'YES':'',' ',it.note||'']); });
+    out+=csvRow([dl2,dt,'Defrost','Defrost completed by','','','','','','',defrostByOf(st).ini,defrostByOf(st).at]);
+    ms.prep.forEach(function(p){ var r=st.prep[p.id]||{}; var mk=num(p.tg[di])-num(r.have);
+      out+=csvRow([dl2,dt,'Prep',p.name,p.uom,p.tg[di],r.have,'',p.task?'':fmt(mk),r.done?'YES':'','',p.detail||'']); });
+    (ms.weekly[dk]||[]).forEach(function(t,i){ var r=st.weekly[i]||{};
+      out+=csvRow([dl2,dt,'Weekly cleaning',t.text,'','','','','',r.done?'YES':'',r.ini||'',t.note||'']); });
+    ms.closedown.forEach(function(c){ var r=st.closedown[c.id]||{};
+      out+=csvRow([dl2,dt,'Closedown',c.task,'','','','','',r.done?'YES':'',r.ini||'',[c.method,c.detail,c.note].filter(Boolean).join(' — ')]); });
+    out+=csvRow([dl2,dt,'Closedown',ms.tempQuestion,'','','','','','','',st.temp]);
+    out+=csvRow([dl2,dt,'Sign off','Closing chef','','','','','',st.chef.at?'YES':'',st.chef.ini,st.chef.at]);
+    out+=csvRow([dl2,dt,'Sign off','Duty manager','','','','','',st.dm.at?'YES':'',st.dm.ini,st.dm.at]);
+    (st.notes||[]).forEach(function(n){ out+=csvRow([dl2,dt,'Handover note',n.text,'','','','','','',n.by,n.at]); });
+    if(st.ack) out+=csvRow([dl2,dt,'Handover','Read & understood','','','','','','YES',st.ack.ini,st.ack.at]);
+    out+=csvRow([dl2,dt,'Day status',st.closed?'Marked complete':'Not marked complete','','','','','','','',st.closedAt]);
+  });
+  return out;
+}
+
+function arcSummary(rec){
+  var w=rec.week, ms=rec.master, h='';
+  DK.forEach(function(dk,di){
+    var st=w.days[dk], cd=0, pd=0;
+    ms.closedown.forEach(function(c){ if((st.closedown[c.id]||{}).done) cd++; });
+    ms.prep.forEach(function(p){ if((st.prep[p.id]||{}).done) pd++; });
+    h+='<p><b>'+DAYS[di].label+'</b><br>Defrost by: '+esc(defrostByOf(st).ini||'—')+
+       '<br>Prep '+pd+'/'+ms.prep.length+' &middot; Closedown '+cd+'/'+ms.closedown.length+
+       '<br>Chef: '+esc(st.chef.ini||'—')+' &middot; Manager: '+esc(st.dm.ini||'—')+
+       (st.notes&&st.notes.length? '<br>Handover notes: '+st.notes.length : '')+'</p>';
+  });
+  return h;
+}
+
+/* ---------------- file helpers ---------------- */
+function dl(name,text,mime){
+  try{
+    var b=new Blob([text],{type:mime+';charset=utf-8'});
+    var u=URL.createObjectURL(b), a=document.createElement('a');
+    a.href=u; a.download=name; document.body.appendChild(a); a.click();
+    setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(u); },1500);
+  }catch(e){ alert('Download failed on this device.'); }
+}
+function pick(cb){
+  var i=document.createElement('input'); i.type='file'; i.accept='.json,application/json';
+  i.onchange=function(){ var f=i.files[0]; if(!f) return; var r=new FileReader();
+    r.onload=function(){ cb(String(r.result)); }; r.readAsText(f); };
+  i.click();
+}
+
+/* ---------------- go ----------------
+   Render straight away from whatever is cached on this device so the app is
+   never blocked waiting on the network, then quietly pull the latest shared
+   copy in the background and re-render if it turns out something changed
+   (e.g. another device updated the master pars, or filed the week). */
+render();
+
+function boot(){
+  setSyncState('syncing');
+  Promise.all([apiGet(KEY_MASTER), apiGet(KEY_WEEK+weekKey), apiGet(KEY_CARRY), apiGet(KEY_IDX)])
+    .then(function(res){
+      var rMaster=res[0], rWeek=res[1], rCarry=res[2], rIdx=res[3];
+      if(rMaster===undefined){ setSyncState('offline'); return; } /* server unreachable — stay on local cache */
+      var changed=false;
+      if(rMaster){ master=rMaster; ensureMasterDefaults(); lsSetLocal(KEY_MASTER,master); changed=true; }
+      if(rWeek){ week=rWeek; lsSetLocal(KEY_WEEK+weekKey,week); changed=true; }
+      if(rCarry!==undefined && rCarry!==null){ carry=rCarry; lsSetLocal(KEY_CARRY,carry); }
+      if(rIdx){ lsSetLocal(KEY_IDX,rIdx); }
+      setSyncState('synced');
+      if(changed) render();
+    })
+    .catch(function(){ setSyncState('offline'); });
+}
+boot();
+</script>
+</body>
+</html>
