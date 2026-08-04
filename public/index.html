@@ -29,6 +29,7 @@
   --font-body:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2px solid var(--accent2);outline-offset:2px;border-radius:4px}
 html,body{margin:0;padding:0}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{
@@ -42,8 +43,10 @@ input,select,textarea,button{font-family:inherit;font-size:16px}
 .wrap{max-width:1180px;margin:0 auto;padding:0 12px}
 
 /* ---------- header ---------- */
-header.app{background:var(--brand);color:#fff;padding:10px 0 0;position:sticky;top:0;z-index:40;box-shadow:0 4px 18px rgba(0,0,0,.24)}
+header.app{background:linear-gradient(180deg,#1c2027,var(--brand) 60%);color:#fff;padding:10px 0 0;position:sticky;top:0;z-index:40;box-shadow:0 4px 18px rgba(0,0,0,.24)}
 .hrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px}
+.brandmark{height:30px;width:auto;display:block}
 .hrow h1{font-size:19px;margin:0;font-weight:700;letter-spacing:-.01em}
 .wk{font-size:13px;opacity:.75;margin-left:auto;text-align:right;font-family:var(--font-body)}
 .wk b{opacity:1}
@@ -60,7 +63,15 @@ header.app{background:var(--brand);color:#fff;padding:10px 0 0;position:sticky;t
 .tab.done{border-color:#4ade80}
 
 /* ---------- cards ---------- */
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);margin:14px 0;overflow:hidden;box-shadow:var(--shadow)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);margin:14px 0;overflow:hidden;box-shadow:var(--shadow);transition:box-shadow .18s,transform .18s}
+@media (hover:hover) and (pointer:fine){
+  .card:hover{box-shadow:0 2px 4px rgba(20,22,28,.06), 0 16px 32px -16px rgba(20,22,28,.28);transform:translateY(-1px)}
+  .btn:hover{filter:brightness(1.04)}
+  .tab:not(.active):hover{background:rgba(255,255,255,.14)}
+  .jumpchip:hover{filter:brightness(0.97)}
+}
+#view.tabswitch{animation:viewIn .22s ease}
+@keyframes viewIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 .card[id^="sec-"]{border-left:5px solid var(--sc,var(--line))}
 .card[id^="sec-"] .sec-head h2::before{content:'';display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--sc,var(--line));margin-right:9px;vertical-align:middle}
 .card[id^="msec-"]{border-left:5px solid var(--sc,var(--line))}
@@ -195,7 +206,7 @@ input.txt:focus,textarea:focus{outline:none;border-color:var(--accent2);box-shad
 <header class="app">
   <div class="wrap">
     <div class="hrow">
-      <h1>Kitchen Week</h1>
+      <div class="brand"><img src="/icons/header-mark.png" alt="" class="brandmark" onerror="this.style.display='none'"><h1>Kitchen Week</h1></div>
       <div class="wk" id="weeklabel"></div>
       <div class="wk" id="syncBadge" style="margin-left:12px;opacity:.85"></div>
     </div>
@@ -497,7 +508,7 @@ function openLoginModal(onSuccess){
 function showLoginPin(idx){
   var u=(pendingLoginList||[])[idx]; if(!u) return;
   var area=el('loginPinArea'); if(!area) return;
-  area.innerHTML='<div class="row"><input class="txt" id="loginPin" type="tel" placeholder="PIN" onfocus="this.select()" style="max-width:140px">'+
+  area.innerHTML='<div class="row"><input class="txt" id="loginPin" type="password" autocomplete="off" placeholder="PIN" onfocus="this.select()" style="max-width:140px">'+
     '<button class="btn primary" data-act="loginSubmit" data-uidx="'+idx+'">Sign in</button></div>';
   var pinEl=el('loginPin');
   if(pinEl){ pinEl.focus(); pinEl.addEventListener('keydown',function(ev){ if(ev.key==='Enter') doLogin(idx); }); }
@@ -543,7 +554,7 @@ function openDmLoginModal(onSuccess){
 function showDmLoginPin(idx){
   var u=(pendingDmLoginList||[])[idx]; if(!u) return;
   var area=el('dmLoginPinArea'); if(!area) return;
-  area.innerHTML='<div class="row"><input class="txt" id="dmLoginPin" type="tel" placeholder="PIN" onfocus="this.select()" style="max-width:140px">'+
+  area.innerHTML='<div class="row"><input class="txt" id="dmLoginPin" type="password" autocomplete="off" placeholder="PIN" onfocus="this.select()" style="max-width:140px">'+
     '<button class="btn primary" data-act="dmLoginSubmit" data-uidx="'+idx+'">Sign off</button></div>';
   var pinEl=el('dmLoginPin');
   if(pinEl){ pinEl.focus(); pinEl.addEventListener('keydown',function(ev){ if(ev.key==='Enter') doDmLogin(idx); }); }
@@ -584,7 +595,7 @@ function openManagerLoginModal(onSuccess){
 function showMgrLoginPin(idx){
   var u=(pendingMgrLoginList||[])[idx]; if(!u) return;
   var area=el('mgrLoginPinArea'); if(!area) return;
-  area.innerHTML='<div class="row"><input class="txt" id="mgrLoginPin" type="tel" placeholder="PIN" onfocus="this.select()" style="max-width:140px">'+
+  area.innerHTML='<div class="row"><input class="txt" id="mgrLoginPin" type="password" autocomplete="off" placeholder="PIN" onfocus="this.select()" style="max-width:140px">'+
     '<button class="btn primary" data-act="mgrLoginSubmit" data-uidx="'+idx+'">Continue</button></div>';
   var pinEl=el('mgrLoginPin');
   if(pinEl){ pinEl.focus(); pinEl.addEventListener('keydown',function(ev){ if(ev.key==='Enter') doMgrLogin(idx); }); }
@@ -817,6 +828,7 @@ function renderTabs(){
 el('tabs').addEventListener('click',function(e){
   var b=e.target.closest('[data-tab]'); if(!b) return;
   ui.tab=b.getAttribute('data-tab'); render();
+  var v=el('view'); if(v){ v.classList.remove('tabswitch'); void v.offsetWidth; v.classList.add('tabswitch'); }
   window.scrollTo(0,0);
 });
 
@@ -1031,7 +1043,7 @@ function renderMaster(){
     return '<div class="card"><div class="sec-head"><h2>Master tables</h2></div><div class="pad">'+
       '<p>The master tables hold the defrost pars, prep pars, cleaning lists, staff, and bookings that every day is built from. Enter a Kitchen Manager, General Manager, or Duty Manager PIN to continue.</p>'+
       '<p class="small muted">Kitchen Managers and General Managers can open and change everything here, and can sign off anything. Duty Managers can open Staff and Bookings only.</p>'+
-      '<div class="row"><input class="txt" id="pinIn" type="tel" placeholder="PIN" onfocus="this.select()" style="max-width:140px">'+
+      '<div class="row"><input class="txt" id="pinIn" type="password" autocomplete="off" placeholder="PIN" onfocus="this.select()" style="max-width:140px">'+
       '<button class="btn primary" data-act="unlock">Unlock</button></div></div></div>';
   }
   var full=ui.adminLevel==='full';
@@ -1124,7 +1136,7 @@ function renderMaster(){
      '<p class="small muted">Kitchen Managers can open and change every part of Master, and their PIN also works anywhere a sign-off is asked for — chef, duty manager, defrost, handover — in place of a regular staff or duty manager PIN.</p>';
   (master.kitchenManagers||[]).forEach(function(u,r){
     h+='<div class="row" style="margin-bottom:8px"><input class="txt" style="max-width:180px" data-m="km.name" data-r="'+r+'" value="'+esc(u.name)+'" placeholder="Name">'+
-       '<input class="txt" style="max-width:120px" type="tel" data-m="km.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="PIN" onfocus="this.select()">'+
+       '<input class="txt" style="max-width:120px" type="password" autocomplete="off" data-m="km.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="PIN" onfocus="this.select()">'+
        '<button class="btn sm danger" data-act="delKm" data-id="'+r+'">Remove</button></div>';
   });
   if(!(master.kitchenManagers||[]).length){ h+='<p class="muted small">No kitchen managers added yet.</p>'; }
@@ -1135,7 +1147,7 @@ function renderMaster(){
      '<p class="small muted">Same access as Kitchen Managers above — full access to Master, and can sign off anywhere a sign-off is asked for.</p>';
   (master.generalManagers||[]).forEach(function(u,r){
     h+='<div class="row" style="margin-bottom:8px"><input class="txt" style="max-width:180px" data-m="gm.name" data-r="'+r+'" value="'+esc(u.name)+'" placeholder="Name">'+
-       '<input class="txt" style="max-width:120px" type="tel" data-m="gm.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="PIN" onfocus="this.select()">'+
+       '<input class="txt" style="max-width:120px" type="password" autocomplete="off" data-m="gm.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="PIN" onfocus="this.select()">'+
        '<button class="btn sm danger" data-act="delGm" data-id="'+r+'">Remove</button></div>';
   });
   if(!(master.generalManagers||[]).length){ h+='<p class="muted small">No general managers added yet.</p>'; }
@@ -1147,7 +1159,7 @@ function renderMaster(){
      '<p class="small muted">Add anyone who should be able to log in on a tablet and tick off tasks. Each person should keep their own PIN private — it\'s what stamps their name on completed jobs.</p>';
   (master.users||[]).forEach(function(u,r){
     h+='<div class="row" style="margin-bottom:8px"><input class="txt" style="max-width:180px" data-m="u.name" data-r="'+r+'" value="'+esc(u.name)+'" placeholder="Name">'+
-       '<input class="txt" style="max-width:120px" type="tel" data-m="u.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="PIN" onfocus="this.select()">'+
+       '<input class="txt" style="max-width:120px" type="password" autocomplete="off" data-m="u.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="PIN" onfocus="this.select()">'+
        '<button class="btn sm danger" data-act="delUser" data-id="'+r+'">Remove</button></div>';
   });
   if(!(master.users||[]).length){ h+='<p class="muted small">No staff added yet.</p>'; }
@@ -1159,7 +1171,7 @@ function renderMaster(){
      '<p class="small muted">These names and PINs are only used for the duty manager sign-off at closedown — kept separate from the staff list above so signing off requires the duty manager\'s own PIN, not just whoever is logged in on the tablet.</p>';
   (master.dutyManagers||[]).forEach(function(u,r){
     h+='<div class="row" style="margin-bottom:8px"><input class="txt" style="max-width:180px" data-m="dm.name" data-r="'+r+'" value="'+esc(u.name)+'" placeholder="Name">'+
-       '<input class="txt" style="max-width:120px" type="tel" data-m="dm.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="PIN" onfocus="this.select()">'+
+       '<input class="txt" style="max-width:120px" type="password" autocomplete="off" data-m="dm.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="PIN" onfocus="this.select()">'+
        '<button class="btn sm danger" data-act="delDm" data-id="'+r+'">Remove</button></div>';
   });
   if(!(master.dutyManagers||[]).length){ h+='<p class="muted small">No duty managers added yet.</p>'; }

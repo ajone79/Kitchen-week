@@ -61,6 +61,14 @@ everything on it. The Prep and Defrost sections also have their own
 when you just want that one list on paper (e.g. to hand to a prep cook, or
 stick by the fridge) without the rest of the day.
 
+Under **Records**, **Print cleaning & closedown checks** prints Morning
+cleaning, Weekly cleaning, and Daily closedown checks for a whole week in
+one go — Monday through Sunday, each day starting on its own page, with
+all three sections together on that page rather than split further. It's
+available
+for the current in-progress week ("This week"), and for any filed week
+too, so past weeks can be reprinted for records just as easily.
+
 ## Master admin screen
 A jump-nav bar at the top (and repeated at the start of every card) lets you
 jump straight to any section — Morning, Defrost, Prep, Weekly, Closedown,
@@ -74,23 +82,18 @@ Defrost tables. Add/remove rows with the buttons next to each list. Weekly
 tasks can each have a reference photo too, shown the same way as the
 others — tap the <b>i</b> next to the task on the day page.
 
-## Bookings (from a run sheet PDF)
-Under **Master → Bookings**, pick the date and upload a run sheet PDF (e.g.
-exported from DesignMyNight) — it's stored exactly as uploaded, nothing is
-read or parsed out of it. Once saved, a **Show today's bookings** card
-appears automatically on that date's day page; tapping it opens a reminder
-that it's a snapshot (not live) plus an **Open PDF** link that opens the
-original file in a new tab, full screen, with the browser's own PDF viewer
-and pinch-to-zoom.
+## Bookings (live link)
+Under **Master → Bookings**, paste the base link to your booking system's
+run sheet (e.g. from DesignMyNight) — the part before the date, something
+like `https://admin.designmynight.com/yourvenue/sites/xxxxx/run-sheet`.
+Master shows a preview of what today's link would resolve to, so you can
+check you've pasted the right thing.
 
-If you paste your live run sheet link into the Bookings section, the popup
-also links straight to it. Live pulling isn't possible automatically: run
-sheet systems like DesignMyNight require you to be logged in to view them,
-and a static site like this one can't fetch another company's admin pages
-in the background — so a PDF upload (once a day, or whenever bookings
-change materially) is the practical way to get this info onto the tablet.
-Saved bookings are cleared automatically after two weeks to keep things
-tidy.
+Each day's page then gets an **Open today's bookings ↗** button that
+builds that day's exact link (`...run-sheet?date=YYYY-MM-DD`) and opens it
+in a new tab. It's a genuinely live link straight into your real booking
+system — not a snapshot — so you'll need to log in there the first time,
+same as normal; the app itself never stores or reads any booking data.
 
 ## Staff login
 Under **Master → Staff**, a manager can add each person's name and a short
@@ -122,11 +125,11 @@ three tiers:
   staff or duty manager PIN. Manage both lists under **Master → Kitchen
   Managers / General Managers**.
 - **Duty Managers** — unlock Master too, but only see **Staff** and
-  **Bookings**: adding/removing staff PINs and uploading bookings. They
-  still do the duty manager sign-off at closedown as before. Managed under
-  **Master → Duty Managers** (a Kitchen/General Manager has to add or
-  remove duty managers themselves).
-- **Staff** — no Master access at all; just the ordinary clock-in used to
+  **Bookings**: adding/removing staff PINs and setting the bookings link.
+  They still do the duty manager sign-off at closedown as before. Managed
+  under **Master → Duty Managers** (a Kitchen/General Manager has to add
+  or remove duty managers themselves).
+- **Staff** — no Master access at all; just the ordinary login used to
   tick off jobs and sign as chef/defrost.
 
 Whoever unlocks Master (top of the screen, next to **Lock master
@@ -135,6 +138,14 @@ changes. If a site was set up before this existed, its old single admin
 PIN is carried forward automatically as a named "Kitchen Manager" so
 nobody gets locked out — worth renaming and adding real people once you're
 in.
+
+Every PIN field uses a masked, `type="password"` input rather than a
+plain numeric one — this is deliberate: it's what tells Android/iOS
+keyboards not to remember or suggest what was typed, which matters on a
+shared kitchen tablet where several people's PINs get typed into the same
+field over time. The trade-off is the on-screen keyboard is a normal
+keyboard rather than a dedicated numeric pad (an extra tap to reach the
+number row) — worth it for PINs not leaking into keyboard suggestions.
 
 ## Home screen icon
 The site now has a proper icon and manifest, so "Add to Home Screen" looks
@@ -165,7 +176,7 @@ posted notice (tap it to view full-size).
 ## Leaving a message for someone
 Under **Master → Messages** (Kitchen/General Managers only), pick anyone
 with a PIN — staff, a duty manager, or another manager — and write them a
-note. It pops up once, the next time that person logs in (staff clock-in,
+note. It pops up once, the next time that person logs in (staff login,
 duty manager sign-off, or unlocking Master), and then it's cleared.
 Messages waiting to go out are listed underneath, with a **Cancel** button
 if you change your mind before it's been seen.
