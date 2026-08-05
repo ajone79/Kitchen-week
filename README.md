@@ -36,7 +36,7 @@ the kitchen's data through the API. To stop that:
 3. Redeploy the site (Netlify does this automatically after saving the
    variable, or trigger it under **Deploys → Trigger deploy**).
 4. On each tablet, open the app → **Master → unlock with a Kitchen
-   Manager, General Manager, or Duty Manager PIN →
+   Manager, General Manager, Deputy Manager, Kitchen Team Leader, or Team Leader PIN →
    Settings → Shared database**, and type in the same password. Do this once
    per tablet.
 
@@ -70,9 +70,17 @@ for the current in-progress week ("This week"), and for any filed week
 too, so past weeks can be reprinted for records just as easily.
 
 ## Master admin screen
+**App title** (in Settings) changes what shows in the header and the
+browser tab — defaults to "Kitchen Tasks", but can be set to a site name
+or anything else, per deployment. This only affects the in-app text; the
+name used for "Add to Home Screen" icons comes from `manifest.json` and
+the `apple-mobile-web-app-title` meta tag in `index.html`, which are
+static files — change those directly if a particular site wants its own
+home-screen icon label too.
+
 A jump-nav bar at the top (and repeated at the start of every card) lets you
 jump straight to any section — Morning, Defrost, Prep, Weekly, Closedown,
-Staff, Duty Managers, Bookings, Settings — without scrolling through the
+Staff, Team Leaders, Bookings, Settings — without scrolling through the
 whole page.
 
 Weekly cleaning and the daily closedown list are edited with one box per
@@ -108,29 +116,40 @@ defrost as completed, adding a handover note, and acknowledging a
 handover. If nobody's logged in yet, ticking a box or tapping a sign-off
 button will prompt you to log in first.
 
-The **duty manager sign-off** at closedown is kept separate on purpose.
-Under **Master → Duty Managers**, add each duty manager's name and their
-own PIN. Tapping **Duty manager sign-off** always asks for that PIN there
+The **team leader sign-off** at closedown is kept separate on purpose.
+Under **Master → Team Leaders**, add each team leader's name and their
+own PIN. Tapping **Team leader sign-off** always asks for that PIN there
 and then — it doesn't use whoever happens to be logged in on the tablet —
-so the sign-off can only be completed by an actual duty manager.
+so the sign-off can only be completed by an actual team leader.
 
 ## Manager roles &amp; PINs
 Master used to be behind one shared PIN. It's now behind named people at
-three tiers:
+two tiers:
 
-- **Kitchen Managers** and **General Managers** — full access. Either can
-  open and change every part of Master (pars, cleaning lists, staff,
-  bookings, settings), and either can also sign off *anything* elsewhere in
-  the app — chef, duty manager, defrost, handover — in place of a regular
-  staff or duty manager PIN. Manage both lists under **Master → Kitchen
-  Managers / General Managers**.
-- **Duty Managers** — unlock Master too, but only see **Staff** and
+- **Kitchen Managers, General Managers, Deputy Managers,** and **Kitchen
+  Team Leaders** — full access, all four identical in what they can do.
+  Any of them can open and change every part of Master (pars, cleaning
+  lists, staff, bookings, settings), and any of them can also sign off
+  *anything* elsewhere in the app — chef, team leader, defrost, handover —
+  in place of a regular staff or team leader PIN. They're kept as four
+  separate named lists (rather than one combined list) so it's clear at a
+  glance who holds which title, even though they all do the same thing.
+  Manage them under **Master → Kitchen Managers / General Managers /
+  Deputy Managers / Kitchen Team Leaders**.
+- **Team Leaders** — unlock Master too, but only see **Staff** and
   **Bookings**: adding/removing staff PINs and setting the bookings link.
-  They still do the duty manager sign-off at closedown as before. Managed
-  under **Master → Duty Managers** (a Kitchen/General Manager has to add
-  or remove duty managers themselves).
+  They still do the team leader sign-off at closedown as before. Managed
+  under **Master → Team Leaders**, listed just under Staff (a Kitchen/
+  General/Deputy Manager or Kitchen Team Leader has to add or remove team
+  leaders themselves — Team Leaders can't add more of themselves).
 - **Staff** — no Master access at all; just the ordinary login used to
   tick off jobs and sign as chef/defrost.
+
+To keep the jump-nav at the top of Master from being cluttered with six
+near-identical chips, all of the above (bar the Team Leaders sign-off
+list) are grouped under one **Users** chip — the individual sections
+themselves are still all there, just not each getting their own link in
+the quick-nav bar.
 
 Whoever unlocks Master (top of the screen, next to **Lock master
 tables**) shows their name and access level, so it's clear who's making
@@ -138,6 +157,10 @@ changes. If a site was set up before this existed, its old single admin
 PIN is carried forward automatically as a named "Kitchen Manager" so
 nobody gets locked out — worth renaming and adding real people once you're
 in.
+
+There's a safeguard stopping the very last person across the four
+full-access lists combined from being removed, so nobody can accidentally
+lock everyone out of Master.
 
 Every PIN field uses a masked, `type="password"` input rather than a
 plain numeric one — this is deliberate: it's what tells Android/iOS
@@ -175,9 +198,9 @@ posted notice (tap it to view full-size).
 
 ## Leaving a message for someone
 Under **Master → Messages** (Kitchen/General Managers only), pick anyone
-with a PIN — staff, a duty manager, or another manager — and write them a
+with a PIN — staff, a team leader, or another manager — and write them a
 note. It pops up once, the next time that person logs in (staff login,
-duty manager sign-off, or unlocking Master), and then it's cleared.
+team leader sign-off, or unlocking Master), and then it's cleared.
 Messages waiting to go out are listed underneath, with a **Cancel** button
 if you change your mind before it's been seen.
 

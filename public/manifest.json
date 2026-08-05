@@ -1,6 +1,6 @@
 {
-  "name": "Kitchen Week — Defrost, Prep & Cleaning",
-  "short_name": "Kitchen Week",
+  "name": "Kitchen Tasks — Defrost, Prep & Cleaning",
+  "short_name": "Kitchen Tasks",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

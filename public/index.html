@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Kitchen Week">
+<meta name="apple-mobile-web-app-title" content="Kitchen Tasks">
 <meta name="theme-color" content="#181b21">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Kitchen Week — Defrost, Prep &amp; Cleaning</title>
+<title>Kitchen Tasks — Defrost, Prep &amp; Cleaning</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
@@ -206,7 +206,7 @@ input.txt:focus,textarea:focus{outline:none;border-color:var(--accent2);box-shad
 <header class="app">
   <div class="wrap">
     <div class="hrow">
-      <div class="brand"><img src="/icons/header-mark.png" alt="" class="brandmark" onerror="this.style.display='none'"><h1>Kitchen Week</h1></div>
+      <div class="brand"><img src="/icons/header-mark.png" alt="" class="brandmark" onerror="this.style.display='none'"><h1 id="appTitle">Kitchen Tasks</h1></div>
       <div class="wk" id="weeklabel"></div>
       <div class="wk" id="syncBadge" style="margin-left:12px;opacity:.85"></div>
     </div>
@@ -258,10 +258,7 @@ var MASTER_SECTIONS = [
   {key:'prep',     label:'Prep',     color:'#0891b2', bg:'#e1f4f8', bd:'#94d3e0', full:true},
   {key:'weekly',   label:'Weekly',   color:'#7c3aed', bg:'#f0eafd', bd:'#c8b3f6', full:true},
   {key:'closedown',label:'Closedown',color:'#be123c', bg:'#fbe6ec', bd:'#eda3b7', full:true},
-  {key:'km',       label:'Kitchen Mgrs',color:'#9333ea',bg:'#f3e8fd',bd:'#d8b4f8', full:true},
-  {key:'gm',       label:'General Mgrs',color:'#9333ea',bg:'#f3e8fd',bd:'#d8b4f8', full:true},
-  {key:'staff',    label:'Staff',    color:'#0f766e', bg:'#e6f5f3', bd:'#8fd0c6', full:false},
-  {key:'dm',       label:'Duty Mgrs',color:'#0f766e', bg:'#e6f5f3', bd:'#8fd0c6', full:true},
+  {key:'users',    label:'Users',    color:'#0f766e', bg:'#e6f5f3', bd:'#8fd0c6', full:false},
   {key:'bookings', label:'Bookings', color:'#b45309', bg:'#fef3e2', bd:'#f3c987', full:false},
   {key:'msg',      label:'Messages', color:'#0e7490', bg:'#e3f4f8', bd:'#a9dbe8', full:true},
   {key:'settings', label:'Settings', color:'#334155', bg:'#eef1f5', bd:'#c7cfd9', full:true}
@@ -280,8 +277,11 @@ function masterJumpNav(current,cls){
 /* levels / targets are [Mon,Tue,Wed,Thu,Fri,Sat,Sun] */
 function DEFAULT_MASTER(){ return {
   pin: '1234',
+  appTitle: 'Kitchen Tasks',
   kitchenManagers: [{name:'Kitchen Manager', pin:'1234'}],
   generalManagers: [],
+  deputyManagers: [],
+  kitchenTeamLeaders: [],
   messages: [],
   notices: [],
   users: [],
@@ -484,7 +484,7 @@ var session = sessionGet(); /* {name:'Alex', at:'...'} or null */
 var pendingLogin = null;
 var pendingLoginList = null;
 function staffLoginList(){
-  return (master.users||[]).concat(master.kitchenManagers||[]).concat(master.generalManagers||[]);
+  return (master.users||[]).concat(master.kitchenManagers||[]).concat(master.generalManagers||[]).concat(master.deputyManagers||[]).concat(master.kitchenTeamLeaders||[]);
 }
 
 function renderUserBar(){
@@ -531,25 +531,25 @@ function requireUser(cb){
 /* ---------------- duty manager sign-off ----------------
    Deliberately separate from the staff login above: whoever is logged
    in on the tablet for cleaning/prep jobs isn't necessarily authorised to
-   sign off as duty manager, so this always asks for a duty manager's own
+   sign off as team leader, so this always asks for a team leader's own
    PIN at the moment of signing rather than trusting the tablet's session. */
 var pendingDmLogin = null;
 var pendingDmLoginList = null;
 function dmLoginList(){
-  return (master.dutyManagers||[]).concat(master.kitchenManagers||[]).concat(master.generalManagers||[]);
+  return (master.dutyManagers||[]).concat(master.kitchenManagers||[]).concat(master.generalManagers||[]).concat(master.deputyManagers||[]).concat(master.kitchenTeamLeaders||[]);
 }
 function openDmLoginModal(onSuccess){
   pendingDmLogin=onSuccess;
   var dms=dmLoginList();
   pendingDmLoginList=dms;
   if(!dms.length){
-    showModal('Duty manager sign-off','<p>No duty managers have been set up yet. Ask an admin to add duty managers under <b>Master \u2192 Duty Managers</b>, then try again.</p>');
+    showModal('Team leader sign-off','<p>No team leaders have been set up yet. Ask an admin to add team leaders under <b>Master \u2192 Users</b>, then try again.</p>');
     return;
   }
   var h='<div class="loginnames">';
   dms.forEach(function(u,i){ h+='<button class="btn" data-dmloginname="'+i+'">'+esc(u.name)+'</button>'; });
   h+='</div><div id="dmLoginPinArea" style="margin-top:14px"></div>';
-  showModal('Duty manager sign-off — who are you?',h);
+  showModal('Team leader sign-off — who are you?',h);
 }
 function showDmLoginPin(idx){
   var u=(pendingDmLoginList||[])[idx]; if(!u) return;
@@ -577,7 +577,7 @@ function requireDm(cb){ openDmLoginModal(cb); }
 var pendingMgrLogin = null;
 var pendingMgrLoginList = null;
 function managerLoginList(){
-  return (master.kitchenManagers||[]).concat(master.generalManagers||[]);
+  return (master.kitchenManagers||[]).concat(master.generalManagers||[]).concat(master.deputyManagers||[]).concat(master.kitchenTeamLeaders||[]);
 }
 function openManagerLoginModal(onSuccess){
   pendingMgrLogin=onSuccess;
@@ -609,10 +609,15 @@ function doMgrLogin(idx){
   if(cb) cb(name);
 }
 function requireManager(cb){ openManagerLoginModal(cb); }
+function countFullManagers(){
+  return (master.kitchenManagers||[]).length+(master.generalManagers||[]).length+(master.deputyManagers||[]).length+(master.kitchenTeamLeaders||[]).length;
+}
 function findAdminByPin(pinVal){
   var pools=[
     {arr:master.kitchenManagers||[], level:'full'},
     {arr:master.generalManagers||[], level:'full'},
+    {arr:master.deputyManagers||[], level:'full'},
+    {arr:master.kitchenTeamLeaders||[], level:'full'},
     {arr:master.dutyManagers||[], level:'duty'}
   ];
   for(var i=0;i<pools.length;i++){
@@ -676,6 +681,12 @@ function fmt(n){ return (Math.round(n*100)/100).toString(); }
 function esc(s){ return String(s===undefined||s===null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function dotFor(i){ return DAYS[(i+2)%7]; }
 function el(id){ return document.getElementById(id); }
+function applyAppTitle(){
+  var t=(master.appTitle||'Kitchen Tasks').trim()||'Kitchen Tasks';
+  document.title=t+' \u2014 Defrost, Prep & Cleaning';
+  var h=el('appTitle'); if(h) h.textContent=t;
+}
+applyAppTitle();
 
 /* ---------------- UI state ---------------- */
 var ui = { tab: DK[todayIdx()], adminLevel:null, adminName:'', collapsed:{} };
@@ -760,7 +771,7 @@ function printWeekChecks(weekObj,masterObj,wkStart,label){
       '<h2>Daily closedown</h2>'+crows+
       '<p class="foot"><b>'+esc(masterObj.tempQuestion||'')+'</b> '+esc(st.temp||'\u2014')+'</p>'+
       '<p class="foot">Closing chef: <b>'+esc(st.chef&&st.chef.ini||'\u2014')+'</b> '+esc(st.chef&&st.chef.at||'')+
-      ' &nbsp;&nbsp;&nbsp; Duty manager: <b>'+esc(st.dm&&st.dm.ini||'\u2014')+'</b> '+esc(st.dm&&st.dm.at||'')+'</p>'+
+      ' &nbsp;&nbsp;&nbsp; Team leader: <b>'+esc(st.dm&&st.dm.ini||'\u2014')+'</b> '+esc(st.dm&&st.dm.at||'')+'</p>'+
       '</div>';
   });
   var w=window.open('','_blank');
@@ -1011,9 +1022,9 @@ function renderDay(dk){
      '<div><label>Closing chef initials</label>'+(st.chef.at
         ? '<div><b>'+esc(st.chef.ini)+'</b> <span class="stamp">'+esc(st.chef.at)+'</span></div>'
         : '<button class="btn ok sm" data-act="signChef">Sign'+(session?' as '+esc(session.name):'')+'</button>')+'</div>'+
-     '<div><label>Duty manager initials</label>'+(st.dm.at
+     '<div><label>Team leader initials</label>'+(st.dm.at
         ? '<div><b>'+esc(st.dm.ini)+'</b> <span class="stamp">'+esc(st.dm.at)+'</span></div>'
-        : '<button class="btn ok sm" data-act="signDm">Duty manager sign-off</button>')+'</div>'+
+        : '<button class="btn ok sm" data-act="signDm">Team leader sign-off</button>')+'</div>'+
      '<div class="small muted" style="flex:1;min-width:200px">Signatures confirm cleaning has been completed to a satisfactory standard. Once signed they are time-stamped and locked.</div>'+
      '</div></div></div>';
 
@@ -1041,8 +1052,8 @@ function renderDay(dk){
 function renderMaster(){
   if(!ui.adminLevel){
     return '<div class="card"><div class="sec-head"><h2>Master tables</h2></div><div class="pad">'+
-      '<p>The master tables hold the defrost pars, prep pars, cleaning lists, staff, and bookings that every day is built from. Enter a Kitchen Manager, General Manager, or Duty Manager PIN to continue.</p>'+
-      '<p class="small muted">Kitchen Managers and General Managers can open and change everything here, and can sign off anything. Duty Managers can open Staff and Bookings only.</p>'+
+      '<p>The master tables hold the defrost pars, prep pars, cleaning lists, staff, and bookings that every day is built from. Enter a PIN to continue.</p>'+
+      '<p class="small muted">Kitchen Managers, General Managers, Deputy Managers, and Kitchen Team Leaders can open and change everything here, and can sign off anything. Team Leaders can open Staff and Bookings only.</p>'+
       '<div class="row"><input class="txt" id="pinIn" type="password" autocomplete="off" placeholder="PIN" onfocus="this.select()" style="max-width:140px">'+
       '<button class="btn primary" data-act="unlock">Unlock</button></div></div></div>';
   }
@@ -1050,7 +1061,7 @@ function renderMaster(){
   var h='';
   h+=masterJumpNav('','top');
   h+='<div class="card noprint"><div class="pad row" style="justify-content:space-between;align-items:center">'+
-     '<div><b>Unlocked'+(ui.adminName?(' as '+esc(ui.adminName)):'')+'</b><div class="small muted">'+(full?'Full manager access':'Duty manager access — Staff and Bookings only')+'</div></div>'+
+     '<div><b>Unlocked'+(ui.adminName?(' as '+esc(ui.adminName)):'')+'</b><div class="small muted">'+(full?'Full manager access':'Team leader access — Staff and Bookings only')+'</div></div>'+
      '<button class="btn" data-act="lock">Lock master tables</button></div></div>';
 
   if(full){
@@ -1132,8 +1143,8 @@ function renderMaster(){
      '<div class="pad" style="padding-top:0"><label style="display:block;font-weight:700;margin:0 0 4px">Closedown question</label><input class="txt" style="max-width:100%" data-m="tempQ" value="'+esc(master.tempQuestion)+'"></div></div>';
 
   /* kitchen managers */
-  h+='<div class="card" id="msec-km" style="--sc:#9333ea">'+masterJumpNav('km','inline')+'<div class="sec-head"><h2>Kitchen Managers</h2><span class="prog">Full access — can alter anything and sign off anything</span></div><div class="pad">'+
-     '<p class="small muted">Kitchen Managers can open and change every part of Master, and their PIN also works anywhere a sign-off is asked for — chef, duty manager, defrost, handover — in place of a regular staff or duty manager PIN.</p>';
+  h+='<div class="card" id="msec-km" style="--sc:#9333ea"><div class="sec-head"><h2>Kitchen Managers</h2><span class="prog">Full access — can alter anything and sign off anything</span></div><div class="pad">'+
+     '<p class="small muted">Kitchen Managers can open and change every part of Master, and their PIN also works anywhere a sign-off is asked for — chef, team leader, defrost, handover — in place of a regular staff or team leader PIN.</p>';
   (master.kitchenManagers||[]).forEach(function(u,r){
     h+='<div class="row" style="margin-bottom:8px"><input class="txt" style="max-width:180px" data-m="km.name" data-r="'+r+'" value="'+esc(u.name)+'" placeholder="Name">'+
        '<input class="txt" style="max-width:120px" type="password" autocomplete="off" data-m="km.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="PIN" onfocus="this.select()">'+
@@ -1143,7 +1154,7 @@ function renderMaster(){
   h+='<button class="btn primary" data-act="addKm">Add kitchen manager</button></div></div>';
 
   /* general managers */
-  h+='<div class="card" id="msec-gm" style="--sc:#9333ea">'+masterJumpNav('gm','inline')+'<div class="sec-head"><h2>General Managers</h2><span class="prog">Full access — can alter anything and sign off anything</span></div><div class="pad">'+
+  h+='<div class="card" id="msec-gm" style="--sc:#9333ea"><div class="sec-head"><h2>General Managers</h2><span class="prog">Full access — can alter anything and sign off anything</span></div><div class="pad">'+
      '<p class="small muted">Same access as Kitchen Managers above — full access to Master, and can sign off anywhere a sign-off is asked for.</p>';
   (master.generalManagers||[]).forEach(function(u,r){
     h+='<div class="row" style="margin-bottom:8px"><input class="txt" style="max-width:180px" data-m="gm.name" data-r="'+r+'" value="'+esc(u.name)+'" placeholder="Name">'+
@@ -1152,10 +1163,32 @@ function renderMaster(){
   });
   if(!(master.generalManagers||[]).length){ h+='<p class="muted small">No general managers added yet.</p>'; }
   h+='<button class="btn primary" data-act="addGm">Add general manager</button></div></div>';
+
+  /* deputy managers */
+  h+='<div class="card" id="msec-deputy" style="--sc:#9333ea"><div class="sec-head"><h2>Deputy Managers</h2><span class="prog">Full access — can alter anything and sign off anything</span></div><div class="pad">'+
+     '<p class="small muted">Same access as Kitchen Managers above — full access to Master, and can sign off anywhere a sign-off is asked for.</p>';
+  (master.deputyManagers||[]).forEach(function(u,r){
+    h+='<div class="row" style="margin-bottom:8px"><input class="txt" style="max-width:180px" data-m="dep.name" data-r="'+r+'" value="'+esc(u.name)+'" placeholder="Name">'+
+       '<input class="txt" style="max-width:120px" type="password" autocomplete="off" data-m="dep.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="PIN" onfocus="this.select()">'+
+       '<button class="btn sm danger" data-act="delDeputy" data-id="'+r+'">Remove</button></div>';
+  });
+  if(!(master.deputyManagers||[]).length){ h+='<p class="muted small">No deputy managers added yet.</p>'; }
+  h+='<button class="btn primary" data-act="addDeputy">Add deputy manager</button></div></div>';
+
+  /* kitchen team leaders */
+  h+='<div class="card" id="msec-ktl" style="--sc:#9333ea"><div class="sec-head"><h2>Kitchen Team Leaders</h2><span class="prog">Full access — can alter anything and sign off anything</span></div><div class="pad">'+
+     '<p class="small muted">Same access as Kitchen Managers above — full access to Master, and can sign off anywhere a sign-off is asked for.</p>';
+  (master.kitchenTeamLeaders||[]).forEach(function(u,r){
+    h+='<div class="row" style="margin-bottom:8px"><input class="txt" style="max-width:180px" data-m="ktl.name" data-r="'+r+'" value="'+esc(u.name)+'" placeholder="Name">'+
+       '<input class="txt" style="max-width:120px" type="password" autocomplete="off" data-m="ktl.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="PIN" onfocus="this.select()">'+
+       '<button class="btn sm danger" data-act="delKtl" data-id="'+r+'">Remove</button></div>';
+  });
+  if(!(master.kitchenTeamLeaders||[]).length){ h+='<p class="muted small">No kitchen team leaders added yet.</p>'; }
+  h+='<button class="btn primary" data-act="addKtl">Add kitchen team leader</button></div></div>';
   }
 
   /* staff */
-  h+='<div class="card" id="msec-staff" style="--sc:#0f766e">'+masterJumpNav('staff','inline')+'<div class="sec-head"><h2>Staff</h2><span class="prog">Names &amp; PINs shown on the login screen</span></div><div class="pad">'+
+  h+='<div class="card" id="msec-users" style="--sc:#0f766e">'+masterJumpNav('users','inline')+'<div class="sec-head"><h2>Staff</h2><span class="prog">Names &amp; PINs shown on the login screen</span></div><div class="pad">'+
      '<p class="small muted">Add anyone who should be able to log in on a tablet and tick off tasks. Each person should keep their own PIN private — it\'s what stamps their name on completed jobs.</p>';
   (master.users||[]).forEach(function(u,r){
     h+='<div class="row" style="margin-bottom:8px"><input class="txt" style="max-width:180px" data-m="u.name" data-r="'+r+'" value="'+esc(u.name)+'" placeholder="Name">'+
@@ -1165,17 +1198,17 @@ function renderMaster(){
   if(!(master.users||[]).length){ h+='<p class="muted small">No staff added yet.</p>'; }
   h+='<button class="btn primary" data-act="addUser">Add staff member</button></div></div>';
 
-  /* duty managers */
+  /* team leaders (formerly duty managers) */
   if(full){
-  h+='<div class="card" id="msec-dm" style="--sc:#0f766e">'+masterJumpNav('dm','inline')+'<div class="sec-head"><h2>Duty Managers</h2><span class="prog">Separate PIN, asked for at the moment of sign-off</span></div><div class="pad">'+
-     '<p class="small muted">These names and PINs are only used for the duty manager sign-off at closedown — kept separate from the staff list above so signing off requires the duty manager\'s own PIN, not just whoever is logged in on the tablet.</p>';
+  h+='<div class="card" id="msec-dm" style="--sc:#0f766e"><div class="sec-head"><h2>Team Leaders</h2><span class="prog">Separate PIN, asked for at the moment of sign-off</span></div><div class="pad">'+
+     '<p class="small muted">These names and PINs are only used for the team leader sign-off at closedown — kept separate from the staff list above so signing off requires the team leader\'s own PIN, not just whoever is logged in on the tablet.</p>';
   (master.dutyManagers||[]).forEach(function(u,r){
     h+='<div class="row" style="margin-bottom:8px"><input class="txt" style="max-width:180px" data-m="dm.name" data-r="'+r+'" value="'+esc(u.name)+'" placeholder="Name">'+
        '<input class="txt" style="max-width:120px" type="password" autocomplete="off" data-m="dm.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="PIN" onfocus="this.select()">'+
        '<button class="btn sm danger" data-act="delDm" data-id="'+r+'">Remove</button></div>';
   });
-  if(!(master.dutyManagers||[]).length){ h+='<p class="muted small">No duty managers added yet.</p>'; }
-  h+='<button class="btn primary" data-act="addDm">Add duty manager</button></div></div>';
+  if(!(master.dutyManagers||[]).length){ h+='<p class="muted small">No team leaders added yet.</p>'; }
+  h+='<button class="btn primary" data-act="addDm">Add team leader</button></div></div>';
   }
 
   /* bookings */
@@ -1189,9 +1222,11 @@ function renderMaster(){
   if(full){
   var everyone=[].concat(
     (master.users||[]).map(function(u){ return {name:u.name, role:'Staff'}; }),
-    (master.dutyManagers||[]).map(function(u){ return {name:u.name, role:'Duty Manager'}; }),
+    (master.dutyManagers||[]).map(function(u){ return {name:u.name, role:'Team Leader'}; }),
     (master.kitchenManagers||[]).map(function(u){ return {name:u.name, role:'Kitchen Manager'}; }),
-    (master.generalManagers||[]).map(function(u){ return {name:u.name, role:'General Manager'}; })
+    (master.generalManagers||[]).map(function(u){ return {name:u.name, role:'General Manager'}; }),
+    (master.deputyManagers||[]).map(function(u){ return {name:u.name, role:'Deputy Manager'}; }),
+    (master.kitchenTeamLeaders||[]).map(function(u){ return {name:u.name, role:'Kitchen Team Leader'}; })
   );
   h+='<div class="card" id="msec-msg" style="--sc:#0e7490">'+masterJumpNav('msg','inline')+'<div class="sec-head"><h2>Messages</h2><span class="prog">Shown once, next time they log in</span></div><div class="pad">'+
      '<p class="small muted">Only Kitchen and General Managers can leave these. Pick anyone with a PIN and they\'ll see it the next time they log in or unlock Master — after that it\'s cleared.</p>'+
@@ -1215,10 +1250,13 @@ function renderMaster(){
   /* settings */
   if(full){
   h+='<div class="card" id="msec-settings" style="--sc:#334155">'+masterJumpNav('settings','inline')+'<div class="sec-head"><h2>Settings</h2></div><div class="pad">'+
-     '<div class="row"><button class="btn" data-act="expMaster">Download master tables</button>'+
+     '<label style="display:block;font-weight:700;margin:0 0 4px">App title</label>'+
+     '<p class="small muted" style="margin-top:0">Shown in the header and the browser tab \u2014 change it to your site name, or anything else. Leave blank to use "Kitchen Tasks".</p>'+
+     '<div class="row"><input class="txt" id="appTitleIn" data-m="appTitle" value="'+esc(master.appTitle)+'" placeholder="Kitchen Tasks" style="max-width:320px"></div>'+
+     '<div class="row" style="margin-top:16px"><button class="btn" data-act="expMaster">Download master tables</button>'+
      '<button class="btn" data-act="impMaster">Restore master tables from file</button>'+
      '<button class="btn danger" data-act="resetMaster">Reset to original sheets</button></div>'+
-     '<p class="small muted" style="margin-top:14px">Build 2026-07-31b</p></div></div>';
+     '<p class="small muted" style="margin-top:14px">Build 2026-08-02</p></div></div>';
 
   h+='<div class="card"><div class="sec-head"><h2>Shared database</h2><span class="prog">'+esc(syncLabel()||'Not yet synced')+'</span></div><div class="pad">'+
      '<p class="small muted">If this kitchen\'s Netlify site has a shared database key set, every tablet needs to enter it once so they all read and write the same data. Leave blank if no key was set up.</p>'+
@@ -1467,7 +1505,8 @@ function handleDayInput(t,f){
    ===================================================================== */
 function handleMasterInput(t,m){
   var r=t.getAttribute('data-r'), c=t.getAttribute('data-c');
-  if(m==='d.name') master.defrost[r].name=t.value;
+  if(m==='appTitle'){ master.appTitle=t.value; applyAppTitle(); }
+  else if(m==='d.name') master.defrost[r].name=t.value;
   else if(m==='d.uom') master.defrost[r].uom=t.value;
   else if(m==='d.note') master.defrost[r].note=t.value;
   else if(m==='d.lv') master.defrost[r].lv[c]=t.value===''?0:num(t.value);
@@ -1493,6 +1532,10 @@ function handleMasterInput(t,m){
   else if(m==='km.pin'){ master.kitchenManagers[r].pin=t.value; }
   else if(m==='gm.name'){ master.generalManagers[r].name=t.value; }
   else if(m==='gm.pin'){ master.generalManagers[r].pin=t.value; }
+  else if(m==='dep.name'){ master.deputyManagers[r].name=t.value; }
+  else if(m==='dep.pin'){ master.deputyManagers[r].pin=t.value; }
+  else if(m==='ktl.name'){ master.kitchenTeamLeaders[r].name=t.value; }
+  else if(m==='ktl.pin'){ master.kitchenTeamLeaders[r].pin=t.value; }
   else if(m==='u.name'){ master.users[r].name=t.value; }
   else if(m==='u.pin'){ master.users[r].pin=t.value; }
   else if(m==='dm.name'){ master.dutyManagers[r].name=t.value; }
@@ -1619,17 +1662,27 @@ el('view').addEventListener('click',function(e){
   }
   else if(act==='addUser'){ master.users=master.users||[]; master.users.push({name:'New staff',pin:'1111'}); saveMaster(); render(); }
   else if(act==='delUser'){ if(confirm('Remove '+master.users[id].name+' from staff?')){ master.users.splice(id,1); saveMaster(); render(); } }
-  else if(act==='addDm'){ master.dutyManagers=master.dutyManagers||[]; master.dutyManagers.push({name:'New duty manager',pin:'2222'}); saveMaster(); render(); }
-  else if(act==='delDm'){ if(confirm('Remove '+master.dutyManagers[id].name+' from duty managers?')){ master.dutyManagers.splice(id,1); saveMaster(); render(); } }
+  else if(act==='addDm'){ master.dutyManagers=master.dutyManagers||[]; master.dutyManagers.push({name:'New team leader',pin:'2222'}); saveMaster(); render(); }
+  else if(act==='delDm'){ if(confirm('Remove '+master.dutyManagers[id].name+' from team leaders?')){ master.dutyManagers.splice(id,1); saveMaster(); render(); } }
   else if(act==='addKm'){ master.kitchenManagers=master.kitchenManagers||[]; master.kitchenManagers.push({name:'New kitchen manager',pin:'3333'}); saveMaster(); render(); }
   else if(act==='delKm'){
-    if(master.kitchenManagers.length<=1 && !(master.generalManagers&&master.generalManagers.length)){ alert('Keep at least one Kitchen or General Manager, or you\u2019ll lock everyone out of Master.'); return; }
+    if(countFullManagers()<=1){ alert('Keep at least one Kitchen Manager, General Manager, Deputy Manager, or Kitchen Team Leader, or you\u2019ll lock everyone out of Master.'); return; }
     if(confirm('Remove '+master.kitchenManagers[id].name+' from kitchen managers?')){ master.kitchenManagers.splice(id,1); saveMaster(); render(); }
   }
   else if(act==='addGm'){ master.generalManagers=master.generalManagers||[]; master.generalManagers.push({name:'New general manager',pin:'4444'}); saveMaster(); render(); }
   else if(act==='delGm'){
-    if(master.generalManagers.length<=1 && !(master.kitchenManagers&&master.kitchenManagers.length)){ alert('Keep at least one Kitchen or General Manager, or you\u2019ll lock everyone out of Master.'); return; }
+    if(countFullManagers()<=1){ alert('Keep at least one Kitchen Manager, General Manager, Deputy Manager, or Kitchen Team Leader, or you\u2019ll lock everyone out of Master.'); return; }
     if(confirm('Remove '+master.generalManagers[id].name+' from general managers?')){ master.generalManagers.splice(id,1); saveMaster(); render(); }
+  }
+  else if(act==='addDeputy'){ master.deputyManagers=master.deputyManagers||[]; master.deputyManagers.push({name:'New deputy manager',pin:'5555'}); saveMaster(); render(); }
+  else if(act==='delDeputy'){
+    if(countFullManagers()<=1){ alert('Keep at least one Kitchen Manager, General Manager, Deputy Manager, or Kitchen Team Leader, or you\u2019ll lock everyone out of Master.'); return; }
+    if(confirm('Remove '+master.deputyManagers[id].name+' from deputy managers?')){ master.deputyManagers.splice(id,1); saveMaster(); render(); }
+  }
+  else if(act==='addKtl'){ master.kitchenTeamLeaders=master.kitchenTeamLeaders||[]; master.kitchenTeamLeaders.push({name:'New kitchen team leader',pin:'6666'}); saveMaster(); render(); }
+  else if(act==='delKtl'){
+    if(countFullManagers()<=1){ alert('Keep at least one Kitchen Manager, General Manager, Deputy Manager, or Kitchen Team Leader, or you\u2019ll lock everyone out of Master.'); return; }
+    if(confirm('Remove '+master.kitchenTeamLeaders[id].name+' from kitchen team leaders?')){ master.kitchenTeamLeaders.splice(id,1); saveMaster(); render(); }
   }
   else if(act==='sendMessage'){
     var toSel=el('msgTo'), msgTxt=el('msgText');
@@ -1649,11 +1702,11 @@ el('view').addEventListener('click',function(e){
     master.messages=(master.messages||[]).filter(function(m){ return m.id!==id; });
     saveMaster(); render();
   }
-  else if(act==='resetMaster'){ if(confirm('Reset all master tables back to the original spreadsheets? Pars you have changed will be lost.')){ master=DEFAULT_MASTER(); saveMaster(); render(); } }
+  else if(act==='resetMaster'){ if(confirm('Reset all master tables back to the original spreadsheets? Pars you have changed will be lost.')){ master=DEFAULT_MASTER(); saveMaster(); applyAppTitle(); render(); } }
   else if(act==='expMaster'){ dl('kitchen-master-'+iso(new Date())+'.json', JSON.stringify(master,null,2), 'application/json'); }
   else if(act==='impMaster'){ pick(function(txt){ try{ var o=JSON.parse(txt); if(!o.defrost) throw 0; master=o;
     if((!master.kitchenManagers||!master.kitchenManagers.length) && master.pin){ master.kitchenManagers=[{name:'Kitchen Manager', pin:master.pin}]; }
-    saveMaster(); render(); alert('Master tables restored.'); }catch(err){ alert('That file could not be read.'); } }); }
+    saveMaster(); applyAppTitle(); render(); alert('Master tables restored.'); }catch(err){ alert('That file could not be read.'); } }); }
   else if(act==='pickPhoto'){ var fi=document.getElementById('pf_'+id.replace(':','_')); if(fi) fi.click(); }
   else if(act==='delPhoto'){
     var ci=id.indexOf(':'); clearItemImg(id.slice(0,ci),id.slice(ci+1)); saveMaster(); render();
@@ -1782,7 +1835,7 @@ function weekCsv(w,ms){
       out+=csvRow([dl2,dt,'Closedown',c.task,'','','','','',r.done?'YES':'',r.ini||'',[c.method,c.detail,c.note].filter(Boolean).join(' — ')]); });
     out+=csvRow([dl2,dt,'Closedown',ms.tempQuestion,'','','','','','','',st.temp]);
     out+=csvRow([dl2,dt,'Sign off','Closing chef','','','','','',st.chef.at?'YES':'',st.chef.ini,st.chef.at]);
-    out+=csvRow([dl2,dt,'Sign off','Duty manager','','','','','',st.dm.at?'YES':'',st.dm.ini,st.dm.at]);
+    out+=csvRow([dl2,dt,'Sign off','Team leader','','','','','',st.dm.at?'YES':'',st.dm.ini,st.dm.at]);
     (st.notes||[]).forEach(function(n){ out+=csvRow([dl2,dt,'Handover note',n.text,'','','','','','',n.by,n.at]); });
     if(st.ack) out+=csvRow([dl2,dt,'Handover','Read & understood','','','','','','YES',st.ack.ini,st.ack.at]);
     out+=csvRow([dl2,dt,'Day status',st.closed?'Marked complete':'Not marked complete','','','','','','','',st.closedAt]);
