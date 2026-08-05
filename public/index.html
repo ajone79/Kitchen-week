@@ -117,6 +117,7 @@ td.calc{font-weight:800;text-align:center;font-size:18px;width:110px}
 .pill.zero{background:#eef1f5;color:var(--mut)}
 .pill.over{background:var(--warnbg);color:var(--warn)}
 .pill.trail{background:#0e7490;color:#fff;font-size:11px;padding:3px 9px;margin-left:8px;vertical-align:middle;font-family:var(--font-body)}
+.pill.shelflife{background:var(--warnbg);color:var(--warn);border:1px solid #f3c987;font-size:11px;padding:3px 9px;margin-left:8px;vertical-align:middle;font-family:var(--font-body);cursor:pointer;font-weight:700}
 .rownote{display:block;font-weight:500;font-size:12px;color:var(--warn);margin-top:2px}
 
 /* ---------- checkboxes ---------- */
@@ -301,7 +302,7 @@ function DEFAULT_MASTER(){ return {
     {id:'fries',     name:'Fries',          uom:'bags',             lv:[3,3,3,4,4,4,3]},
     {id:'chknbrst',  name:'Chicken Breast', uom:'each',             lv:[10,10,10,15,15,15,10]},
     {id:'sausage',   name:'Sausage',        uom:'each',             lv:[8,8,8,12,12,12,8]},
-    {id:'stbacon',   name:'Streaky Bacon',  uom:'packs',            lv:[2,2,3,3,3,3,2]},
+    {id:'stbacon',   name:'Streaky Bacon',  uom:'packs',            lv:[2,2,3,3,3,3,2], shelfLifeDays:7},
     {id:'porkribs',  name:'Pork Ribs',      uom:'each',             lv:[2,2,2,2,2,2,2]},
     {id:'burgers',   name:'Burgers',        uom:'1/3 100mm gastro', lv:[1,1,1,3,3,3,1]},
     {id:'muffins',   name:'Muffins',        uom:'packs',            lv:[0.5,0.5,0.5,0.5,1,1,0.5], br:true},
@@ -508,7 +509,7 @@ function openLoginModal(onSuccess){
 function showLoginPin(idx){
   var u=(pendingLoginList||[])[idx]; if(!u) return;
   var area=el('loginPinArea'); if(!area) return;
-  area.innerHTML='<div class="row"><input class="txt" id="loginPin" type="password" autocomplete="off" placeholder="PIN" onfocus="this.select()" style="max-width:140px">'+
+  area.innerHTML='<div class="row"><input class="txt" id="loginPin" type="password" autocomplete="off" maxlength="4" placeholder="PIN" onfocus="this.select()" style="max-width:140px">'+
     '<button class="btn primary" data-act="loginSubmit" data-uidx="'+idx+'">Sign in</button></div>';
   var pinEl=el('loginPin');
   if(pinEl){ pinEl.focus(); pinEl.addEventListener('keydown',function(ev){ if(ev.key==='Enter') doLogin(idx); }); }
@@ -554,7 +555,7 @@ function openDmLoginModal(onSuccess){
 function showDmLoginPin(idx){
   var u=(pendingDmLoginList||[])[idx]; if(!u) return;
   var area=el('dmLoginPinArea'); if(!area) return;
-  area.innerHTML='<div class="row"><input class="txt" id="dmLoginPin" type="password" autocomplete="off" placeholder="PIN" onfocus="this.select()" style="max-width:140px">'+
+  area.innerHTML='<div class="row"><input class="txt" id="dmLoginPin" type="password" autocomplete="off" maxlength="4" placeholder="PIN" onfocus="this.select()" style="max-width:140px">'+
     '<button class="btn primary" data-act="dmLoginSubmit" data-uidx="'+idx+'">Sign off</button></div>';
   var pinEl=el('dmLoginPin');
   if(pinEl){ pinEl.focus(); pinEl.addEventListener('keydown',function(ev){ if(ev.key==='Enter') doDmLogin(idx); }); }
@@ -595,7 +596,7 @@ function openManagerLoginModal(onSuccess){
 function showMgrLoginPin(idx){
   var u=(pendingMgrLoginList||[])[idx]; if(!u) return;
   var area=el('mgrLoginPinArea'); if(!area) return;
-  area.innerHTML='<div class="row"><input class="txt" id="mgrLoginPin" type="password" autocomplete="off" placeholder="PIN" onfocus="this.select()" style="max-width:140px">'+
+  area.innerHTML='<div class="row"><input class="txt" id="mgrLoginPin" type="password" autocomplete="off" maxlength="4" placeholder="PIN" onfocus="this.select()" style="max-width:140px">'+
     '<button class="btn primary" data-act="mgrLoginSubmit" data-uidx="'+idx+'">Continue</button></div>';
   var pinEl=el('mgrLoginPin');
   if(pinEl){ pinEl.focus(); pinEl.addEventListener('keydown',function(ev){ if(ev.key==='Enter') doMgrLogin(idx); }); }
@@ -1061,6 +1062,7 @@ function renderDay(dk){
     if(need>0){ dtot++; if(r.out) dn++; }
     if(it.br) h+='<tr class="spacer"><td colspan="7"></td></tr>';
     h+='<tr><td class="item">'+esc(it.name)+(it.note||it.img?'<span class="info" data-info="d:'+it.id+'">i</span>':'')+
+       (num(it.shelfLifeDays)>0?'<span class="pill shelflife" data-info="s:'+it.id+'">'+num(it.shelfLifeDays)+' day life</span>':'')+
        (it.note?'<span class="rownote">'+esc(it.note)+'</span>':'')+'</td>'+
        '<td class="uom">'+esc(it.uom)+'</td><td class="lvl">'+fmt(lvl)+'</td>'+
        '<td><input class="num" inputmode="decimal" data-f="d.on" data-id="'+it.id+'" value="'+esc(r.on)+'"></td>'+
@@ -1122,7 +1124,7 @@ function renderMaster(){
     return '<div class="card"><div class="sec-head"><h2>Master tables</h2></div><div class="pad">'+
       '<p>The master tables hold the defrost pars, prep pars, cleaning lists, staff, and bookings that every day is built from. Enter a PIN to continue.</p>'+
       '<p class="small muted">Kitchen Managers, General Managers, Deputy Managers, and Kitchen Team Leaders can open and change everything here, and can sign off anything. Team Leaders can open Staff and Bookings only.</p>'+
-      '<div class="row"><input class="txt" id="pinIn" type="password" autocomplete="off" placeholder="PIN" onfocus="this.select()" style="max-width:140px">'+
+      '<div class="row"><input class="txt" id="pinIn" type="password" autocomplete="off" maxlength="4" placeholder="PIN" onfocus="this.select()" style="max-width:140px">'+
       '<button class="btn primary" data-act="unlock">Unlock</button></div></div></div>';
   }
   var full=ui.adminLevel==='full';
@@ -1156,7 +1158,8 @@ function renderMaster(){
   h+='<th></th></tr></thead><tbody>';
   master.defrost.forEach(function(it,r){
     h+='<tr><td><input class="txt" style="max-width:180px" data-m="d.name" data-r="'+r+'" value="'+esc(it.name)+'">'+
-       '<div><input class="txt" style="max-width:260px;height:36px;margin-top:4px;font-size:13px" data-m="d.note" data-r="'+r+'" value="'+esc(it.note||'')+'" placeholder="Note shown under the item"></div></td>'+
+       '<div><input class="txt" style="max-width:260px;height:36px;margin-top:4px;font-size:13px" data-m="d.note" data-r="'+r+'" value="'+esc(it.note||'')+'" placeholder="Note shown under the item"></div>'+
+       '<div style="margin-top:4px;display:flex;align-items:center;gap:6px"><input class="num" style="max-width:60px;height:32px;font-size:13px" data-m="d.shelfLifeDays" data-r="'+r+'" value="'+esc(it.shelfLifeDays||'')+'" placeholder="\u2014"><span class="small muted">day shelf life once out (optional, overrides the usual day-dot system)</span></div></td>'+
        '<td><input class="txt" style="max-width:130px" data-m="d.uom" data-r="'+r+'" value="'+esc(it.uom)+'"></td>'+
        '<td>'+photoCell('d',r,it.img)+'</td>';
     DK.forEach(function(k,c){ h+='<td><input class="num" inputmode="decimal" data-m="d.lv" data-r="'+r+'" data-c="'+c+'" value="'+esc(it.lv[c])+'"></td>'; });
@@ -1310,8 +1313,14 @@ function renderMaster(){
 
   /* settings */
   if(full){
-  h+='<div class="card" id="msec-settings" style="--sc:#334155">'+masterJumpNav('settings','inline')+'<div class="sec-head"><h2>Settings</h2></div><div class="pad">'+
-     '<label style="display:block;font-weight:700;margin:0 0 4px">App title</label>'+
+  var badPins=allPinHolders().filter(function(p){ return !/^\d{4}$/.test(String(p.pin||'')); });
+  h+='<div class="card" id="msec-settings" style="--sc:#334155">'+masterJumpNav('settings','inline')+'<div class="sec-head"><h2>Settings</h2></div><div class="pad">';
+  if(badPins.length){
+    h+='<div class="banner warn"><h3>Some PINs aren\u2019t 4 digits</h3><p class="small" style="margin:0 0 8px">Sign-in PIN boxes now only accept 4 digits, so these people won\u2019t be able to type their current PIN in full. Give them a new 4-digit PIN under Master (Users / Team Leaders) to fix it:</p><ul>';
+    badPins.forEach(function(p){ h+='<li>'+esc(p.name)+'</li>'; });
+    h+='</ul></div>';
+  }
+  h+='<label style="display:block;font-weight:700;margin:0 0 4px">App title</label>'+
      '<p class="small muted" style="margin-top:0">Shown in the header and the browser tab \u2014 change it to your site name, or anything else. Leave blank to use "Kitchen Tasks".</p>'+
      '<div class="row"><input class="txt" id="appTitleIn" data-m="appTitle" value="'+esc(master.appTitle)+'" placeholder="Kitchen Tasks" style="max-width:320px"></div>'+
      '<div class="row" style="margin-top:16px"><button class="btn" data-act="expMaster">Download master tables</button>'+
@@ -1575,6 +1584,7 @@ function handleMasterInput(t,m){
   else if(m==='d.name') master.defrost[r].name=t.value;
   else if(m==='d.uom') master.defrost[r].uom=t.value;
   else if(m==='d.note') master.defrost[r].note=t.value;
+  else if(m==='d.shelfLifeDays') master.defrost[r].shelfLifeDays=t.value===''?0:num(t.value);
   else if(m==='d.lv') master.defrost[r].lv[c]=t.value===''?0:num(t.value);
   else if(m==='p.name') master.prep[r].name=t.value;
   else if(m==='p.uom') master.prep[r].uom=t.value;
@@ -1734,29 +1744,29 @@ el('view').addEventListener('click',function(e){
     var wp=id.split(':'), wk=wp[0], wi=parseInt(wp[1],10);
     if(master.weekly[wk]){ master.weekly[wk].splice(wi,1); saveMaster(); render(); }
   }
-  else if(act==='addUser'){ master.users=master.users||[]; master.users.push({name:'New staff',pin:nextFreePin()}); saveMaster(); render(); }
-  else if(act==='delUser'){ if(confirm('Remove '+master.users[id].name+' from staff?')){ master.users.splice(id,1); saveMaster(); render(); } }
-  else if(act==='addDm'){ master.dutyManagers=master.dutyManagers||[]; master.dutyManagers.push({name:'New team leader',pin:nextFreePin()}); saveMaster(); render(); }
-  else if(act==='delDm'){ if(confirm('Remove '+master.dutyManagers[id].name+' from team leaders?')){ master.dutyManagers.splice(id,1); saveMaster(); render(); } }
-  else if(act==='addKm'){ master.kitchenManagers=master.kitchenManagers||[]; master.kitchenManagers.push({name:'New kitchen manager',pin:nextFreePin()}); saveMaster(); render(); }
+  else if(act==='addUser'){ master.users=master.users||[]; master.users.push({name:'',pin:nextFreePin()}); saveMaster(); render(); }
+  else if(act==='delUser'){ if(confirm('Remove '+(master.users[id].name||'this person')+' from staff?')){ master.users.splice(id,1); saveMaster(); render(); } }
+  else if(act==='addDm'){ master.dutyManagers=master.dutyManagers||[]; master.dutyManagers.push({name:'',pin:nextFreePin()}); saveMaster(); render(); }
+  else if(act==='delDm'){ if(confirm('Remove '+(master.dutyManagers[id].name||'this person')+' from team leaders?')){ master.dutyManagers.splice(id,1); saveMaster(); render(); } }
+  else if(act==='addKm'){ master.kitchenManagers=master.kitchenManagers||[]; master.kitchenManagers.push({name:'',pin:nextFreePin()}); saveMaster(); render(); }
   else if(act==='delKm'){
     if(countFullManagers()<=1){ alert('Keep at least one Kitchen Manager, General Manager, Deputy Manager, or Kitchen Team Leader, or you\u2019ll lock everyone out of Master.'); return; }
-    if(confirm('Remove '+master.kitchenManagers[id].name+' from kitchen managers?')){ master.kitchenManagers.splice(id,1); saveMaster(); render(); }
+    if(confirm('Remove '+(master.kitchenManagers[id].name||'this person')+' from kitchen managers?')){ master.kitchenManagers.splice(id,1); saveMaster(); render(); }
   }
-  else if(act==='addGm'){ master.generalManagers=master.generalManagers||[]; master.generalManagers.push({name:'New general manager',pin:nextFreePin()}); saveMaster(); render(); }
+  else if(act==='addGm'){ master.generalManagers=master.generalManagers||[]; master.generalManagers.push({name:'',pin:nextFreePin()}); saveMaster(); render(); }
   else if(act==='delGm'){
     if(countFullManagers()<=1){ alert('Keep at least one Kitchen Manager, General Manager, Deputy Manager, or Kitchen Team Leader, or you\u2019ll lock everyone out of Master.'); return; }
-    if(confirm('Remove '+master.generalManagers[id].name+' from general managers?')){ master.generalManagers.splice(id,1); saveMaster(); render(); }
+    if(confirm('Remove '+(master.generalManagers[id].name||'this person')+' from general managers?')){ master.generalManagers.splice(id,1); saveMaster(); render(); }
   }
-  else if(act==='addDeputy'){ master.deputyManagers=master.deputyManagers||[]; master.deputyManagers.push({name:'New deputy manager',pin:nextFreePin()}); saveMaster(); render(); }
+  else if(act==='addDeputy'){ master.deputyManagers=master.deputyManagers||[]; master.deputyManagers.push({name:'',pin:nextFreePin()}); saveMaster(); render(); }
   else if(act==='delDeputy'){
     if(countFullManagers()<=1){ alert('Keep at least one Kitchen Manager, General Manager, Deputy Manager, or Kitchen Team Leader, or you\u2019ll lock everyone out of Master.'); return; }
-    if(confirm('Remove '+master.deputyManagers[id].name+' from deputy managers?')){ master.deputyManagers.splice(id,1); saveMaster(); render(); }
+    if(confirm('Remove '+(master.deputyManagers[id].name||'this person')+' from deputy managers?')){ master.deputyManagers.splice(id,1); saveMaster(); render(); }
   }
-  else if(act==='addKtl'){ master.kitchenTeamLeaders=master.kitchenTeamLeaders||[]; master.kitchenTeamLeaders.push({name:'New kitchen team leader',pin:nextFreePin()}); saveMaster(); render(); }
+  else if(act==='addKtl'){ master.kitchenTeamLeaders=master.kitchenTeamLeaders||[]; master.kitchenTeamLeaders.push({name:'',pin:nextFreePin()}); saveMaster(); render(); }
   else if(act==='delKtl'){
     if(countFullManagers()<=1){ alert('Keep at least one Kitchen Manager, General Manager, Deputy Manager, or Kitchen Team Leader, or you\u2019ll lock everyone out of Master.'); return; }
-    if(confirm('Remove '+master.kitchenTeamLeaders[id].name+' from kitchen team leaders?')){ master.kitchenTeamLeaders.splice(id,1); saveMaster(); render(); }
+    if(confirm('Remove '+(master.kitchenTeamLeaders[id].name||'this person')+' from kitchen team leaders?')){ master.kitchenTeamLeaders.splice(id,1); saveMaster(); render(); }
   }
   else if(act==='sendMessage'){
     var toSel=el('msgTo'), msgTxt=el('msgText');
@@ -1819,6 +1829,14 @@ function showInfo(ref){
   var kind=ref.slice(0,1), id=ref.slice(2), title='', body='';
   if(kind==='d'){ var it=master.defrost.filter(function(x){return x.id===id;})[0]; if(!it) return;
     title=it.name; body='<b>How to count:</b> '+esc(it.uom)+(it.note?'<br><br>'+esc(it.note):'')+imgTag(it.img); }
+  if(kind==='s'){ var it3=master.defrost.filter(function(x){return x.id===id;})[0]; if(!it3) return;
+    var days=num(it3.shelfLifeDays);
+    var di3=DK.indexOf(ui.tab);
+    var dt3=di3>=0?addDays(weekStart,di3):new Date();
+    var useBy=addDays(dt3,days);
+    title=it3.name+' \u2014 shelf life';
+    body='<p style="margin:0 0 12px">Gets '+days+' day'+(days===1?'':'s')+' from being taken out \u2014 different from the usual day-dot system.</p>'+
+         '<p style="margin:0"><b>Taken out:</b> '+esc(shortDate(dt3))+'<br><b>Use by:</b> '+esc(shortDate(useBy))+'</p>'; }
   if(kind==='p'){ var p=master.prep.filter(function(x){return x.id===id;})[0]; if(!p) return;
     title=p.name; body='<b>Unit:</b> '+esc(p.uom)+(p.detail?'<br><br>'+esc(p.detail):'')+imgTag(p.img); }
   if(kind==='m'){ var mi=master.morning.filter(function(x){return x.id===id;})[0]; if(!mi) return;

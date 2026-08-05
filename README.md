@@ -178,7 +178,13 @@ people anywhere in the system can't end up sharing a PIN. This is a
 simple heads-up, not hardened security — it just tells you the PIN's
 taken so you can pick another. New people added via any "Add" button get
 a random unused 4-digit PIN to start from, rather than everyone landing
-on the same default and clashing immediately.
+on the same default and clashing immediately. Every PIN box everywhere —
+both the ones under Master where PINs are set, and the ones used to sign
+in/sign off elsewhere — is capped at 4 digits, so it's consistent
+wherever you're typing one in. If a site somehow already has a PIN longer
+than 4 digits from before this existed, Settings shows a warning listing
+who needs a new one, since they'd otherwise be unable to type their old
+PIN in full.
 
 ## Home screen icon
 The site now has a proper icon and manifest, so "Add to Home Screen" looks
@@ -187,6 +193,20 @@ thumbnail — same icon file works for iOS and Android, no separate setup
 needed. It's a small checklist motif using the app's own section colours,
 in `public/icons/`, referenced from `public/manifest.json` (Android) and
 an `apple-touch-icon` link (iOS).
+
+## Shelf life once defrosted
+Most defrost items just use the day-dot system (see the Defrost section
+of the User Guide). A few — like streaky bacon, which is good for 7 days
+once it's out rather than needing to be watched day-by-day — need their
+own countdown instead. In **Master → Defrost pars**, each item has an
+optional "day shelf life once out" box; leave it blank for the normal
+day-dot items, or set a number of days for ones that work differently.
+
+Set, it shows a small amber badge on that item on the day page, e.g.
+"7 day life" — tap it and it shows the date it's being taken out (today,
+whichever day you're viewing) and the calculated use-by date, worked out
+fresh from the day's actual date rather than being a fixed date anyone
+has to update.
 
 ## Trail sign-off flag
 In **Master → Weekly**, each task has an "Also needs signing off in
