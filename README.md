@@ -194,22 +194,29 @@ needed. It's a small checklist motif using the app's own section colours,
 in `public/icons/`, referenced from `public/manifest.json` (Android) and
 an `apple-touch-icon` link (iOS).
 
-## Defrost badges &amp; shelf life once defrosted
-Each item in **Master → Defrost pars** has a small **▸ Advanced** toggle
-under its name — tap it to reveal extra options, kept out of the way so
-the table doesn't get cluttered for items that don't need them:
+## Item badges &amp; shelf life
+Both **Master → Defrost pars** and **Master → Prep pars** have a small
+**▸ Advanced** toggle under each item's name — tap it to reveal extra
+options, kept out of the way so the table doesn't get cluttered for items
+that don't need them:
 
 - **Badges** — tick any that apply: Raw Fish (blue), Raw Meat (red),
   Cooked Meat (yellow), Wash Before Use (brown). Shown as small
   colour-coded tags next to the item on the day page.
-- **Extended shelf life once taken out** — for items that don't fit the
-  usual day-dot system (streaky bacon, say, which is fine for 7 days
-  once out rather than needing daily tracking). Enter the total number
-  of days, counting the day it's taken out as day one — so a 7-day life
-  starting on the 10th runs out on the 16th, not the 17th. Set, it shows
-  an amber "N day life" badge; tap it to see today's date and the
-  calculated use-by date, worked out fresh each time rather than a fixed
-  date anyone has to update.
+- **Extended shelf life** — for items that don't fit the usual day-dot
+  (Defrost) or daily (Prep) system — streaky bacon, say, which is fine
+  for 7 days once out rather than needing daily tracking. Enter the
+  total number of days, counting the day it's taken out/made as day one
+  — so a 7-day life starting on the 10th runs out on the 16th, not the
+  17th. Set, it shows an amber "N day life" badge; tap it to see the
+  relevant date and the calculated use-by date, worked out fresh each
+  time rather than a fixed date anyone has to update.
+
+## Quick-link chip wording
+The Morning/Prep/Weekly/Defrost/Closedown chips shown at the top of each
+day (and repeated in each section's header) read "Morning tasks",
+"Prep", "Todays weekly cleaning", "Defrost", and "Closedown tasks" — only
+the chip text, the section headings and cards underneath are unchanged.
 
 ## Trail sign-off flag
 In **Master → Weekly**, each task has an "Also needs signing off in

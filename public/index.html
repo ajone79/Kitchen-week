@@ -104,7 +104,7 @@ table.grid{width:100%;border-collapse:collapse;min-width:640px}
 table.grid th,table.grid td{padding:9px 8px;border-bottom:1px solid #eceff3;text-align:left;vertical-align:middle}
 table.grid th{font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;color:var(--mut);background:#fafbfc;position:sticky;top:0}
 table.grid tbody tr:hover{background:#fafbfd}
-table.grid tr.spacer td{height:8px;background:#f7f8fa;border-bottom:1px solid var(--line);padding:0}
+table.grid tr.spacer td{height:8px;background:#f7f8fa;padding:0}
 td.item{font-weight:600;min-width:170px}
 .info{display:inline-block;margin-left:6px;width:22px;height:22px;line-height:20px;text-align:center;border-radius:50%;background:#eaedf5;color:var(--accent2);font-weight:800;font-size:13px;cursor:pointer;vertical-align:middle;font-family:var(--font-display)}
 td.uom{color:var(--mut);font-size:13px;white-space:nowrap}
@@ -237,11 +237,11 @@ var DAYS = [
 var DK = DAYS.map(function(d){return d.k;});
 
 var SECTIONS = [
-  {key:'morning',   label:'Morning cleaning', short:'Morning',   color:'#c2410c', bg:'#fdece3', bd:'#f3b58e'},
-  {key:'prep',      label:'Prep',             short:'Prep',      color:'#0891b2', bg:'#e1f4f8', bd:'#94d3e0'},
-  {key:'weekly',    label:'Weekly cleaning',  short:'Weekly',    color:'#7c3aed', bg:'#f0eafd', bd:'#c8b3f6'},
-  {key:'defrost',   label:'Defrost',          short:'Defrost',   color:'#2563eb', bg:'#e7edfd', bd:'#a9bdf5'},
-  {key:'closedown', label:'Daily closedown',  short:'Closedown', color:'#be123c', bg:'#fbe6ec', bd:'#eda3b7'}
+  {key:'morning',   label:'Morning cleaning', short:'Morning tasks',           color:'#c2410c', bg:'#fdece3', bd:'#f3b58e'},
+  {key:'prep',      label:'Prep',             short:'Prep',                    color:'#0891b2', bg:'#e1f4f8', bd:'#94d3e0'},
+  {key:'weekly',    label:'Weekly cleaning',  short:'Todays weekly cleaning',  color:'#7c3aed', bg:'#f0eafd', bd:'#c8b3f6'},
+  {key:'defrost',   label:'Defrost',          short:'Defrost',                 color:'#2563eb', bg:'#e7edfd', bd:'#a9bdf5'},
+  {key:'closedown', label:'Daily closedown',  short:'Closedown tasks',         color:'#be123c', bg:'#fbe6ec', bd:'#eda3b7'}
 ];
 function toggleBtn(key,open){
   return '<button type="button" class="btn sm noprint sec-toggle" style="margin-left:auto" data-act="toggleSection" data-id="'+key+'">'+(open?'\u25be Hide':'\u25b8 Show')+'</button>';
@@ -254,7 +254,7 @@ function jumpNav(current,cls){
   h+='</nav>';
   return h;
 }
-var DEFROST_BADGES={
+var ITEM_BADGES={
   rawfish:{label:'Raw Fish', bg:'#2563eb', fg:'#fff'},
   rawmeat:{label:'Raw Meat', bg:'#c0342a', fg:'#fff'},
   cookedmeat:{label:'Cooked Meat', bg:'#eab308', fg:'#3f2d03'},
@@ -764,7 +764,7 @@ function applyAppTitle(){
 applyAppTitle();
 
 /* ---------------- UI state ---------------- */
-var ui = { tab: DK[todayIdx()], adminLevel:null, adminName:'', collapsed:{}, defrostAdv:{} };
+var ui = { tab: DK[todayIdx()], adminLevel:null, adminName:'', collapsed:{}, defrostAdv:{}, prepAdv:{} };
 var noticeDraftImg = null; /* photo attached to a notice being composed, before it's posted */
 
 /* ---------------- modal ---------------- */
@@ -1023,15 +1023,20 @@ function renderDay(dk){
   h+='<div class="tblwrap"><table class="grid"><thead><tr><th>Item</th><th>UOM</th><th>Par</th><th>Have</th><th>To make</th><th>Done</th></tr></thead><tbody>';
   master.prep.forEach(function(p){
     var r=st.prep[p.id]||{}, tgt=num(p.tg[di]);
+    var pbadgeHtml='';
+    (p.badges||[]).forEach(function(bk){
+      var bdef=ITEM_BADGES[bk]; if(bdef) pbadgeHtml+='<span class="pill badge" style="background:'+bdef.bg+';color:'+bdef.fg+'">'+esc(bdef.label)+'</span>';
+    });
+    if(num(p.shelfLifeDays)>0){ pbadgeHtml+='<span class="pill shelflife" data-info="ps:'+p.id+'">'+num(p.shelfLifeDays)+' day life</span>'; }
     if(p.task){
-      h+='<tr><td class="item">'+esc(p.name)+(p.detail||p.img?'<span class="info" data-info="p:'+p.id+'">i</span>':'')+'</td>'+
+      h+='<tr><td class="item">'+esc(p.name)+(p.detail||p.img?'<span class="info" data-info="p:'+p.id+'">i</span>':'')+pbadgeHtml+'</td>'+
          '<td class="uom">'+esc(p.uom)+'</td><td class="lvl">—</td><td class="muted small">task</td><td class="calc"></td>'+
          '<td class="tick"><input type="checkbox" class="chk" data-f="p.done" data-id="'+p.id+'"'+(r.done?' checked':'')+'></td></tr>';
       return;
     }
     var make=tgt-num(r.have);
     var cell = make>0 ? '<span class="pill need">'+fmt(make)+'</span>' : '<span class="pill zero">ok</span>';
-    h+='<tr><td class="item">'+esc(p.name)+(p.detail||p.img?'<span class="info" data-info="p:'+p.id+'">i</span>':'')+'</td>'+
+    h+='<tr><td class="item">'+esc(p.name)+(p.detail||p.img?'<span class="info" data-info="p:'+p.id+'">i</span>':'')+pbadgeHtml+'</td>'+
        '<td class="uom">'+esc(p.uom)+'</td><td class="lvl">'+fmt(tgt)+'</td>'+
        '<td><input class="num" inputmode="decimal" data-f="p.have" data-id="'+p.id+'" value="'+esc(r.have)+'"></td>'+
        '<td class="calc" data-make="'+p.id+'">'+cell+'</td>'+
@@ -1070,7 +1075,7 @@ function renderDay(dk){
     if(it.br) h+='<tr class="spacer"><td colspan="7"></td></tr>';
     var badgeHtml='';
     (it.badges||[]).forEach(function(bk){
-      var bdef=DEFROST_BADGES[bk]; if(bdef) badgeHtml+='<span class="pill badge" style="background:'+bdef.bg+';color:'+bdef.fg+'">'+esc(bdef.label)+'</span>';
+      var bdef=ITEM_BADGES[bk]; if(bdef) badgeHtml+='<span class="pill badge" style="background:'+bdef.bg+';color:'+bdef.fg+'">'+esc(bdef.label)+'</span>';
     });
     if(num(it.shelfLifeDays)>0){ badgeHtml+='<span class="pill shelflife" data-info="s:'+it.id+'">'+num(it.shelfLifeDays)+' day life</span>'; }
     h+='<tr><td class="item">'+esc(it.name)+(it.note||it.img?'<span class="info" data-info="d:'+it.id+'">i</span>':'')+badgeHtml+
@@ -1176,9 +1181,9 @@ function renderMaster(){
       h+='<div style="margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:8px;background:#fafbfc;max-width:280px">'+
          '<label class="small muted" style="display:block;font-weight:700;margin-bottom:6px">Badges</label>'+
          '<div style="display:flex;flex-direction:column;gap:6px">';
-      for(var bk in DEFROST_BADGES){
+      for(var bk in ITEM_BADGES){
         var bchecked=(it.badges||[]).indexOf(bk)>=0;
-        h+='<label style="display:flex;align-items:center;gap:8px;font-size:13px"><input type="checkbox" data-mchk="d.badge" data-badge="'+bk+'" data-r="'+r+'"'+(bchecked?' checked':'')+'> '+esc(DEFROST_BADGES[bk].label)+'</label>';
+        h+='<label style="display:flex;align-items:center;gap:8px;font-size:13px"><input type="checkbox" data-mchk="d.badge" data-badge="'+bk+'" data-r="'+r+'"'+(bchecked?' checked':'')+'> '+esc(ITEM_BADGES[bk].label)+'</label>';
       }
       h+='</div>'+
          '<label class="small muted" style="display:block;font-weight:700;margin:12px 0 4px">Extended shelf life once taken out</label>'+
@@ -1199,8 +1204,25 @@ function renderMaster(){
   DAYS.forEach(function(d){ h+='<th style="text-align:center">'+d.short+'</th>'; });
   h+='<th></th></tr></thead><tbody>';
   master.prep.forEach(function(p,r){
+    var padvOpen=!!ui.prepAdv[p.id];
     h+='<tr><td><input class="txt" style="max-width:180px" data-m="p.name" data-r="'+r+'" value="'+esc(p.name)+'">'+
-       '<div><input class="txt" style="max-width:260px;height:36px;margin-top:4px;font-size:13px" data-m="p.detail" data-r="'+r+'" value="'+esc(p.detail)+'" placeholder="Recipe / method shown on tap"></div></td>'+
+       '<div><input class="txt" style="max-width:260px;height:36px;margin-top:4px;font-size:13px" data-m="p.detail" data-r="'+r+'" value="'+esc(p.detail)+'" placeholder="Recipe / method shown on tap"></div>'+
+       '<div style="margin-top:6px"><button type="button" class="btn sm" data-act="togglePrepAdv" data-id="'+p.id+'">'+(padvOpen?'\u25be':'\u25b8')+' Advanced</button></div>';
+    if(padvOpen){
+      h+='<div style="margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:8px;background:#fafbfc;max-width:280px">'+
+         '<label class="small muted" style="display:block;font-weight:700;margin-bottom:6px">Badges</label>'+
+         '<div style="display:flex;flex-direction:column;gap:6px">';
+      for(var pbk in ITEM_BADGES){
+        var pbchecked=(p.badges||[]).indexOf(pbk)>=0;
+        h+='<label style="display:flex;align-items:center;gap:8px;font-size:13px"><input type="checkbox" data-mchk="p.badge" data-badge="'+pbk+'" data-r="'+r+'"'+(pbchecked?' checked':'')+'> '+esc(ITEM_BADGES[pbk].label)+'</label>';
+      }
+      h+='</div>'+
+         '<label class="small muted" style="display:block;font-weight:700;margin:12px 0 4px">Extended shelf life once prepped</label>'+
+         '<p class="small muted" style="margin:0 0 6px">Number of days total, counting the day it\'s made as day one. Leave blank if not needed.</p>'+
+         '<input class="num" style="max-width:70px" data-m="p.shelfLifeDays" data-r="'+r+'" value="'+esc(p.shelfLifeDays||'')+'" placeholder="\u2014">'+
+         '</div>';
+    }
+    h+='</td>'+
        '<td><input class="txt" style="max-width:120px" data-m="p.uom" data-r="'+r+'" value="'+esc(p.uom)+'"></td>'+
        '<td>'+photoCell('p',r,p.img)+'</td>';
     DK.forEach(function(k,c){ h+='<td><input class="num" inputmode="decimal" data-m="p.tg" data-r="'+r+'" data-c="'+c+'" value="'+esc(p.tg[c])+'"></td>'; });
@@ -1501,6 +1523,17 @@ el('view').addEventListener('change',function(e){
       saveMaster();
     }
   }
+  if(t.type==='checkbox'&&t.getAttribute('data-mchk')==='p.badge'){
+    var pr2=parseInt(t.getAttribute('data-r'),10), pbadge=t.getAttribute('data-badge');
+    var pitem=master.prep[pr2];
+    if(pitem){
+      pitem.badges=pitem.badges||[];
+      var pbidx=pitem.badges.indexOf(pbadge);
+      if(t.checked && pbidx<0) pitem.badges.push(pbadge);
+      else if(!t.checked && pbidx>=0) pitem.badges.splice(pbidx,1);
+      saveMaster();
+    }
+  }
   if(t.type==='file'&&t.getAttribute('data-photo')){
     var list=t.getAttribute('data-photo'), r=t.getAttribute('data-r');
     var file=t.files&&t.files[0]; if(!file) return;
@@ -1627,6 +1660,7 @@ function handleMasterInput(t,m){
   else if(m==='p.name') master.prep[r].name=t.value;
   else if(m==='p.uom') master.prep[r].uom=t.value;
   else if(m==='p.detail') master.prep[r].detail=t.value;
+  else if(m==='p.shelfLifeDays') master.prep[r].shelfLifeDays=t.value===''?0:num(t.value);
   else if(m==='p.tg') master.prep[r].tg[c]=t.value===''?0:num(t.value);
   else if(m==='mo.intro') master.morningNote=t.value;
   else if(m==='mo.task') master.morning[r].task=t.value;
@@ -1764,6 +1798,7 @@ el('view').addEventListener('click',function(e){
   }
   else if(act==='delD'){ if(confirm('Remove '+master.defrost[id].name+' from the defrost sheet?')){ master.defrost.splice(id,1); saveMaster(); render(); } }
   else if(act==='toggleDefrostAdv'){ ui.defrostAdv[id]=!ui.defrostAdv[id]; render(); }
+  else if(act==='togglePrepAdv'){ ui.prepAdv[id]=!ui.prepAdv[id]; render(); }
   else if(act==='addM'){
     master.morning.push({id:'m'+Date.now(),task:'New job',method:''}); saveMaster(); render();
   }
@@ -1865,7 +1900,8 @@ el('view').addEventListener('click',function(e){
 });
 
 function showInfo(ref){
-  var kind=ref.slice(0,1), id=ref.slice(2), title='', body='';
+  var ci=ref.indexOf(':');
+  var kind=ref.slice(0,ci), id=ref.slice(ci+1), title='', body='';
   if(kind==='d'){ var it=master.defrost.filter(function(x){return x.id===id;})[0]; if(!it) return;
     title=it.name; body='<b>How to count:</b> '+esc(it.uom)+(it.note?'<br><br>'+esc(it.note):'')+imgTag(it.img); }
   if(kind==='s'){ var it3=master.defrost.filter(function(x){return x.id===id;})[0]; if(!it3) return;
@@ -1878,6 +1914,14 @@ function showInfo(ref){
          '<p style="margin:0"><b>Taken out:</b> '+esc(shortDate(dt3))+'<br><b>Use by:</b> '+esc(shortDate(useBy))+'</p>'; }
   if(kind==='p'){ var p=master.prep.filter(function(x){return x.id===id;})[0]; if(!p) return;
     title=p.name; body='<b>Unit:</b> '+esc(p.uom)+(p.detail?'<br><br>'+esc(p.detail):'')+imgTag(p.img); }
+  if(kind==='ps'){ var p2=master.prep.filter(function(x){return x.id===id;})[0]; if(!p2) return;
+    var pdays=num(p2.shelfLifeDays);
+    var pdi=DK.indexOf(ui.tab);
+    var pdt=pdi>=0?addDays(weekStart,pdi):new Date();
+    var pUseBy=addDays(pdt,Math.max(pdays-1,0));
+    title=p2.name+' \u2014 shelf life';
+    body='<p style="margin:0 0 12px">Gets '+pdays+' day'+(pdays===1?'':'s')+' total once prepped (that day counts as day one).</p>'+
+         '<p style="margin:0"><b>Made:</b> '+esc(shortDate(pdt))+'<br><b>Use by:</b> '+esc(shortDate(pUseBy))+'</p>'; }
   if(kind==='m'){ var mi=master.morning.filter(function(x){return x.id===id;})[0]; if(!mi) return;
     title=mi.task; body=(mi.detail?esc(mi.detail):'')+(mi.note?'<br><br><b>Note:</b> '+esc(mi.note):'')+imgTag(mi.img); }
   if(kind==='w'){ var dk2=ui.tab, wi=(master.weekly[dk2]||[])[parseInt(id,10)]; if(!wi) return;
