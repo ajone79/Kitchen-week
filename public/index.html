@@ -636,6 +636,73 @@ function deliverMessagesFor(name){
   }).join('');
   showModal('Message'+(msgs.length>1?'s':'')+' for '+esc(name),body);
 }
+var PIN_LIST_MAP={u:'users',dm:'dutyManagers',km:'kitchenManagers',gm:'generalManagers',dep:'deputyManagers',ktl:'kitchenTeamLeaders'};
+function allPinHolders(){
+  var out=[];
+  for(var prefix in PIN_LIST_MAP){
+    (master[PIN_LIST_MAP[prefix]]||[]).forEach(function(u,i){ out.push({list:PIN_LIST_MAP[prefix],idx:i,name:u.name,pin:u.pin}); });
+  }
+  return out;
+}
+function validatePinField(t,m){
+  var prefix=m.split('.')[0];
+  var listKey=PIN_LIST_MAP[prefix]; if(!listKey) return;
+  var r=parseInt(t.getAttribute('data-r'),10);
+  var val=(t.value||'').trim();
+  if(!val) return;
+  if(!/^\d{4}$/.test(val)){
+    alert('PINs need to be exactly 4 digits (numbers only).');
+    t.focus();
+    return;
+  }
+  var dupe=allPinHolders().filter(function(p){ return p.pin===val && !(p.list===listKey && p.idx===r); })[0];
+  if(dupe){
+    alert('That PIN is already used by '+dupe.name+'. Please choose a different one.');
+    t.focus();
+  }
+}
+function nextFreePin(){
+  var used={}; allPinHolders().forEach(function(p){ used[p.pin]=true; });
+  var pin, tries=0;
+  do{ pin=String(Math.floor(1000+Math.random()*9000)); tries++; } while(used[pin] && tries<50);
+  return pin;
+}
+function everyoneForMessages(){
+  return [].concat(
+    (master.users||[]).map(function(u){ return {name:u.name, pin:u.pin, role:'Staff'}; }),
+    (master.dutyManagers||[]).map(function(u){ return {name:u.name, pin:u.pin, role:'Team Leader'}; }),
+    (master.kitchenManagers||[]).map(function(u){ return {name:u.name, pin:u.pin, role:'Kitchen Manager'}; }),
+    (master.generalManagers||[]).map(function(u){ return {name:u.name, pin:u.pin, role:'General Manager'}; }),
+    (master.deputyManagers||[]).map(function(u){ return {name:u.name, pin:u.pin, role:'Deputy Manager'}; }),
+    (master.kitchenTeamLeaders||[]).map(function(u){ return {name:u.name, pin:u.pin, role:'Kitchen Team Leader'}; })
+  );
+}
+function renderMessagesView(){
+  var people=everyoneForMessages();
+  var h='<div class="card"><div class="sec-head"><h2>My Messages</h2><span class="prog">See your last 5</span></div><div class="pad">';
+  if(!people.length){ h+='<p class="muted small">No one has been set up yet — ask a manager to add staff under Master.</p></div></div>'; return h; }
+  h+='<p class="small muted" style="margin-top:0">Tap your name, enter your PIN, and you\u2019ll see the last 5 messages left for you \u2014 handy if you\u2019ve forgotten what one said.</p>'+
+     '<div class="loginnames">';
+  people.forEach(function(p,i){ h+='<button class="btn" data-act="pickMsgViewName" data-id="'+i+'">'+esc(p.name)+'</button>'; });
+  h+='</div><div id="msgViewArea" style="margin-top:14px"></div></div></div>';
+  return h;
+}
+function showMyMessages(idx){
+  var people=everyoneForMessages(), p=people[idx]; if(!p) return;
+  var pinEl=el('msgViewPin'); if(!pinEl) return;
+  if(pinEl.value!==String(p.pin)){ alert('Wrong PIN.'); pinEl.value=''; pinEl.focus(); return; }
+  var mine=(master.messages||[]).filter(function(m){ return m.to===p.name; }).slice().reverse().slice(0,5);
+  var changed=false;
+  mine.forEach(function(m){ if(!m.read){ m.read=true; m.readAt=stamp(); changed=true; } });
+  if(changed) saveMaster();
+  var body='<div style="margin-top:14px"><b>Messages for '+esc(p.name)+'</b>';
+  if(!mine.length){ body+='<p class="muted small">No messages yet.</p>'; }
+  else{
+    mine.forEach(function(m){ body+='<div class="noteitem">'+esc(m.text)+'<div class="meta">From '+esc(m.from)+' \u00b7 '+esc(m.at)+'</div></div>'; });
+  }
+  body+='</div>';
+  var res=el('msgViewResult'); if(res) res.innerHTML=body;
+}
 
 /* ---------------- dates ---------------- */
 function pad(n){return n<10?'0'+n:''+n;}
@@ -833,6 +900,7 @@ function renderTabs(){
   });
   h+='<button class="tab'+(ui.tab==='master'?' active':'')+'" data-tab="master">Master</button>';
   h+='<button class="tab'+(ui.tab==='records'?' active':'')+'" data-tab="records">Records</button>';
+  h+='<button class="tab'+(ui.tab==='messages'?' active':'')+'" data-tab="messages">Messages</button>';
   el('tabs').innerHTML=h;
   el('weeklabel').innerHTML='Week commencing <b>'+shortDate(weekStart)+'</b><br>'+esc(niceDate(new Date()));
 }
@@ -1147,7 +1215,7 @@ function renderMaster(){
      '<p class="small muted">Kitchen Managers can open and change every part of Master, and their PIN also works anywhere a sign-off is asked for — chef, team leader, defrost, handover — in place of a regular staff or team leader PIN.</p>';
   (master.kitchenManagers||[]).forEach(function(u,r){
     h+='<div class="row" style="margin-bottom:8px"><input class="txt" style="max-width:180px" data-m="km.name" data-r="'+r+'" value="'+esc(u.name)+'" placeholder="Name">'+
-       '<input class="txt" style="max-width:120px" type="password" autocomplete="off" data-m="km.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="PIN" onfocus="this.select()">'+
+       '<input class="txt" style="max-width:120px" type="password" autocomplete="off" maxlength="4" data-m="km.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="4-digit PIN" onfocus="this.select()">'+
        '<button class="btn sm danger" data-act="delKm" data-id="'+r+'">Remove</button></div>';
   });
   if(!(master.kitchenManagers||[]).length){ h+='<p class="muted small">No kitchen managers added yet.</p>'; }
@@ -1158,7 +1226,7 @@ function renderMaster(){
      '<p class="small muted">Same access as Kitchen Managers above — full access to Master, and can sign off anywhere a sign-off is asked for.</p>';
   (master.generalManagers||[]).forEach(function(u,r){
     h+='<div class="row" style="margin-bottom:8px"><input class="txt" style="max-width:180px" data-m="gm.name" data-r="'+r+'" value="'+esc(u.name)+'" placeholder="Name">'+
-       '<input class="txt" style="max-width:120px" type="password" autocomplete="off" data-m="gm.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="PIN" onfocus="this.select()">'+
+       '<input class="txt" style="max-width:120px" type="password" autocomplete="off" maxlength="4" data-m="gm.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="4-digit PIN" onfocus="this.select()">'+
        '<button class="btn sm danger" data-act="delGm" data-id="'+r+'">Remove</button></div>';
   });
   if(!(master.generalManagers||[]).length){ h+='<p class="muted small">No general managers added yet.</p>'; }
@@ -1169,7 +1237,7 @@ function renderMaster(){
      '<p class="small muted">Same access as Kitchen Managers above — full access to Master, and can sign off anywhere a sign-off is asked for.</p>';
   (master.deputyManagers||[]).forEach(function(u,r){
     h+='<div class="row" style="margin-bottom:8px"><input class="txt" style="max-width:180px" data-m="dep.name" data-r="'+r+'" value="'+esc(u.name)+'" placeholder="Name">'+
-       '<input class="txt" style="max-width:120px" type="password" autocomplete="off" data-m="dep.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="PIN" onfocus="this.select()">'+
+       '<input class="txt" style="max-width:120px" type="password" autocomplete="off" maxlength="4" data-m="dep.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="4-digit PIN" onfocus="this.select()">'+
        '<button class="btn sm danger" data-act="delDeputy" data-id="'+r+'">Remove</button></div>';
   });
   if(!(master.deputyManagers||[]).length){ h+='<p class="muted small">No deputy managers added yet.</p>'; }
@@ -1180,7 +1248,7 @@ function renderMaster(){
      '<p class="small muted">Same access as Kitchen Managers above — full access to Master, and can sign off anywhere a sign-off is asked for.</p>';
   (master.kitchenTeamLeaders||[]).forEach(function(u,r){
     h+='<div class="row" style="margin-bottom:8px"><input class="txt" style="max-width:180px" data-m="ktl.name" data-r="'+r+'" value="'+esc(u.name)+'" placeholder="Name">'+
-       '<input class="txt" style="max-width:120px" type="password" autocomplete="off" data-m="ktl.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="PIN" onfocus="this.select()">'+
+       '<input class="txt" style="max-width:120px" type="password" autocomplete="off" maxlength="4" data-m="ktl.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="4-digit PIN" onfocus="this.select()">'+
        '<button class="btn sm danger" data-act="delKtl" data-id="'+r+'">Remove</button></div>';
   });
   if(!(master.kitchenTeamLeaders||[]).length){ h+='<p class="muted small">No kitchen team leaders added yet.</p>'; }
@@ -1192,7 +1260,7 @@ function renderMaster(){
      '<p class="small muted">Add anyone who should be able to log in on a tablet and tick off tasks. Each person should keep their own PIN private — it\'s what stamps their name on completed jobs.</p>';
   (master.users||[]).forEach(function(u,r){
     h+='<div class="row" style="margin-bottom:8px"><input class="txt" style="max-width:180px" data-m="u.name" data-r="'+r+'" value="'+esc(u.name)+'" placeholder="Name">'+
-       '<input class="txt" style="max-width:120px" type="password" autocomplete="off" data-m="u.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="PIN" onfocus="this.select()">'+
+       '<input class="txt" style="max-width:120px" type="password" autocomplete="off" maxlength="4" data-m="u.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="4-digit PIN" onfocus="this.select()">'+
        '<button class="btn sm danger" data-act="delUser" data-id="'+r+'">Remove</button></div>';
   });
   if(!(master.users||[]).length){ h+='<p class="muted small">No staff added yet.</p>'; }
@@ -1204,7 +1272,7 @@ function renderMaster(){
      '<p class="small muted">These names and PINs are only used for the team leader sign-off at closedown — kept separate from the staff list above so signing off requires the team leader\'s own PIN, not just whoever is logged in on the tablet.</p>';
   (master.dutyManagers||[]).forEach(function(u,r){
     h+='<div class="row" style="margin-bottom:8px"><input class="txt" style="max-width:180px" data-m="dm.name" data-r="'+r+'" value="'+esc(u.name)+'" placeholder="Name">'+
-       '<input class="txt" style="max-width:120px" type="password" autocomplete="off" data-m="dm.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="PIN" onfocus="this.select()">'+
+       '<input class="txt" style="max-width:120px" type="password" autocomplete="off" maxlength="4" data-m="dm.pin" data-r="'+r+'" value="'+esc(u.pin)+'" placeholder="4-digit PIN" onfocus="this.select()">'+
        '<button class="btn sm danger" data-act="delDm" data-id="'+r+'">Remove</button></div>';
   });
   if(!(master.dutyManagers||[]).length){ h+='<p class="muted small">No team leaders added yet.</p>'; }
@@ -1220,16 +1288,9 @@ function renderMaster(){
 
   /* messages */
   if(full){
-  var everyone=[].concat(
-    (master.users||[]).map(function(u){ return {name:u.name, role:'Staff'}; }),
-    (master.dutyManagers||[]).map(function(u){ return {name:u.name, role:'Team Leader'}; }),
-    (master.kitchenManagers||[]).map(function(u){ return {name:u.name, role:'Kitchen Manager'}; }),
-    (master.generalManagers||[]).map(function(u){ return {name:u.name, role:'General Manager'}; }),
-    (master.deputyManagers||[]).map(function(u){ return {name:u.name, role:'Deputy Manager'}; }),
-    (master.kitchenTeamLeaders||[]).map(function(u){ return {name:u.name, role:'Kitchen Team Leader'}; })
-  );
+  var everyone=everyoneForMessages();
   h+='<div class="card" id="msec-msg" style="--sc:#0e7490">'+masterJumpNav('msg','inline')+'<div class="sec-head"><h2>Messages</h2><span class="prog">Shown once, next time they log in</span></div><div class="pad">'+
-     '<p class="small muted">Only Kitchen and General Managers can leave these. Pick anyone with a PIN and they\'ll see it the next time they log in or unlock Master — after that it\'s cleared.</p>'+
+     '<p class="small muted">Only Kitchen/General/Deputy Managers and Kitchen Team Leaders can leave these. Pick anyone with a PIN and it pops up the next time they log in or unlock Master. They can also look up their last 5 messages any time from the <b>Messages</b> tab.</p>'+
      '<div class="row"><select class="txt" id="msgTo" style="max-width:240px">';
   if(!everyone.length){ h+='<option value="">No one set up yet</option>'; }
   everyone.forEach(function(p){ h+='<option value="'+esc(p.name)+'">'+esc(p.name)+' ('+esc(p.role)+')</option>'; });
@@ -1314,6 +1375,7 @@ function render(){
   var v=el('view');
   if(ui.tab==='master') v.innerHTML=renderMaster();
   else if(ui.tab==='records') v.innerHTML=renderRecords();
+  else if(ui.tab==='messages') v.innerHTML=renderMessagesView();
   else v.innerHTML=renderDay(ui.tab);
   updateProgress();
   applyScrollOffset();
@@ -1350,7 +1412,7 @@ function isSectionOpen(key,complete){
   return !complete;
 }
 function updateProgress(){
-  if(ui.tab==='master'||ui.tab==='records') return;
+  if(ui.tab==='master'||ui.tab==='records'||ui.tab==='messages') return;
   var dk=ui.tab, st=week.days[dk];
   var c=sectionCounts(dk,st);
   if(el('pMorning')) el('pMorning').textContent = c.morning.done+' of '+c.morning.total+' done';
@@ -1367,6 +1429,10 @@ el('view').addEventListener('input',function(e){
   var t=e.target, f=t.getAttribute('data-f'), m=t.getAttribute('data-m');
   if(f) return handleDayInput(t,f);
   if(m) return handleMasterInput(t,m);
+});
+el('view').addEventListener('focusout',function(e){
+  var t=e.target, m=t.getAttribute && t.getAttribute('data-m');
+  if(m && /\.pin$/.test(m)) validatePinField(t,m);
 });
 function isAttributed(f){ return f==='m.done'||f==='w.done'||f==='c.done'; }
 el('view').addEventListener('change',function(e){
@@ -1609,6 +1675,14 @@ el('view').addEventListener('click',function(e){
     requireDm(function(name){ st.dm={ini:name,at:stamp()}; saveWeek(); render(); });
   }
   else if(act==='printSection'){ printSection(id); }
+  else if(act==='pickMsgViewName'){
+    var mvArea=el('msgViewArea'); if(!mvArea) return;
+    mvArea.innerHTML='<div class="row"><input class="txt" id="msgViewPin" type="password" autocomplete="off" placeholder="PIN" onfocus="this.select()" style="max-width:140px">'+
+      '<button class="btn primary" data-act="viewMyMessages" data-id="'+id+'">View my messages</button></div><div id="msgViewResult"></div>';
+    var mvPin=el('msgViewPin');
+    if(mvPin){ mvPin.focus(); mvPin.addEventListener('keydown',function(ev){ if(ev.key==='Enter') showMyMessages(parseInt(id,10)); }); }
+  }
+  else if(act==='viewMyMessages'){ showMyMessages(parseInt(id,10)); }
   else if(act==='toggleSection'){
     if(st){
       var counts2=sectionCounts(dk,st);
@@ -1660,26 +1734,26 @@ el('view').addEventListener('click',function(e){
     var wp=id.split(':'), wk=wp[0], wi=parseInt(wp[1],10);
     if(master.weekly[wk]){ master.weekly[wk].splice(wi,1); saveMaster(); render(); }
   }
-  else if(act==='addUser'){ master.users=master.users||[]; master.users.push({name:'New staff',pin:'1111'}); saveMaster(); render(); }
+  else if(act==='addUser'){ master.users=master.users||[]; master.users.push({name:'New staff',pin:nextFreePin()}); saveMaster(); render(); }
   else if(act==='delUser'){ if(confirm('Remove '+master.users[id].name+' from staff?')){ master.users.splice(id,1); saveMaster(); render(); } }
-  else if(act==='addDm'){ master.dutyManagers=master.dutyManagers||[]; master.dutyManagers.push({name:'New team leader',pin:'2222'}); saveMaster(); render(); }
+  else if(act==='addDm'){ master.dutyManagers=master.dutyManagers||[]; master.dutyManagers.push({name:'New team leader',pin:nextFreePin()}); saveMaster(); render(); }
   else if(act==='delDm'){ if(confirm('Remove '+master.dutyManagers[id].name+' from team leaders?')){ master.dutyManagers.splice(id,1); saveMaster(); render(); } }
-  else if(act==='addKm'){ master.kitchenManagers=master.kitchenManagers||[]; master.kitchenManagers.push({name:'New kitchen manager',pin:'3333'}); saveMaster(); render(); }
+  else if(act==='addKm'){ master.kitchenManagers=master.kitchenManagers||[]; master.kitchenManagers.push({name:'New kitchen manager',pin:nextFreePin()}); saveMaster(); render(); }
   else if(act==='delKm'){
     if(countFullManagers()<=1){ alert('Keep at least one Kitchen Manager, General Manager, Deputy Manager, or Kitchen Team Leader, or you\u2019ll lock everyone out of Master.'); return; }
     if(confirm('Remove '+master.kitchenManagers[id].name+' from kitchen managers?')){ master.kitchenManagers.splice(id,1); saveMaster(); render(); }
   }
-  else if(act==='addGm'){ master.generalManagers=master.generalManagers||[]; master.generalManagers.push({name:'New general manager',pin:'4444'}); saveMaster(); render(); }
+  else if(act==='addGm'){ master.generalManagers=master.generalManagers||[]; master.generalManagers.push({name:'New general manager',pin:nextFreePin()}); saveMaster(); render(); }
   else if(act==='delGm'){
     if(countFullManagers()<=1){ alert('Keep at least one Kitchen Manager, General Manager, Deputy Manager, or Kitchen Team Leader, or you\u2019ll lock everyone out of Master.'); return; }
     if(confirm('Remove '+master.generalManagers[id].name+' from general managers?')){ master.generalManagers.splice(id,1); saveMaster(); render(); }
   }
-  else if(act==='addDeputy'){ master.deputyManagers=master.deputyManagers||[]; master.deputyManagers.push({name:'New deputy manager',pin:'5555'}); saveMaster(); render(); }
+  else if(act==='addDeputy'){ master.deputyManagers=master.deputyManagers||[]; master.deputyManagers.push({name:'New deputy manager',pin:nextFreePin()}); saveMaster(); render(); }
   else if(act==='delDeputy'){
     if(countFullManagers()<=1){ alert('Keep at least one Kitchen Manager, General Manager, Deputy Manager, or Kitchen Team Leader, or you\u2019ll lock everyone out of Master.'); return; }
     if(confirm('Remove '+master.deputyManagers[id].name+' from deputy managers?')){ master.deputyManagers.splice(id,1); saveMaster(); render(); }
   }
-  else if(act==='addKtl'){ master.kitchenTeamLeaders=master.kitchenTeamLeaders||[]; master.kitchenTeamLeaders.push({name:'New kitchen team leader',pin:'6666'}); saveMaster(); render(); }
+  else if(act==='addKtl'){ master.kitchenTeamLeaders=master.kitchenTeamLeaders||[]; master.kitchenTeamLeaders.push({name:'New kitchen team leader',pin:nextFreePin()}); saveMaster(); render(); }
   else if(act==='delKtl'){
     if(countFullManagers()<=1){ alert('Keep at least one Kitchen Manager, General Manager, Deputy Manager, or Kitchen Team Leader, or you\u2019ll lock everyone out of Master.'); return; }
     if(confirm('Remove '+master.kitchenTeamLeaders[id].name+' from kitchen team leaders?')){ master.kitchenTeamLeaders.splice(id,1); saveMaster(); render(); }

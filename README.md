@@ -170,6 +170,16 @@ field over time. The trade-off is the on-screen keyboard is a normal
 keyboard rather than a dedicated numeric pad (an extra tap to reach the
 number row) — worth it for PINs not leaking into keyboard suggestions.
 
+PINs are checked when you tap or tab away from a PIN box (not on every
+keystroke, so it doesn't nag mid-typing): it has to be exactly 4 digits,
+and it can't already belong to someone else — checked across every list
+(Staff, Team Leaders, and all four full-access roles combined), so two
+people anywhere in the system can't end up sharing a PIN. This is a
+simple heads-up, not hardened security — it just tells you the PIN's
+taken so you can pick another. New people added via any "Add" button get
+a random unused 4-digit PIN to start from, rather than everyone landing
+on the same default and clashing immediately.
+
 ## Home screen icon
 The site now has a proper icon and manifest, so "Add to Home Screen" looks
 like a real app on both platforms instead of a bookmark or a screenshot
