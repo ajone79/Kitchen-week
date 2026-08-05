@@ -268,8 +268,7 @@ var MASTER_SECTIONS = [
   {key:'closedown',label:'Closedown',color:'#be123c', bg:'#fbe6ec', bd:'#eda3b7', full:true},
   {key:'users',    label:'Users',    color:'#0f766e', bg:'#e6f5f3', bd:'#8fd0c6', full:false},
   {key:'bookings', label:'Bookings', color:'#b45309', bg:'#fef3e2', bd:'#f3c987', full:false},
-  {key:'msg',      label:'Messages', color:'#0e7490', bg:'#e3f4f8', bd:'#a9dbe8', full:true},
-  {key:'settings', label:'Settings', color:'#334155', bg:'#eef1f5', bd:'#c7cfd9', full:true}
+  {key:'settings', label:'Advanced', color:'#334155', bg:'#eef1f5', bd:'#c7cfd9', full:true}
 ];
 function masterJumpNav(current,cls){
   var h='<nav class="jumpnav'+(cls?' '+cls:'')+'">';
@@ -489,6 +488,7 @@ function sessionGet(){ try{var v=localStorage.getItem(KEY_SESSION); return v?JSO
 function sessionSet(u){ try{localStorage.setItem(KEY_SESSION,JSON.stringify(u));}catch(e){} }
 function sessionClear(){ try{localStorage.removeItem(KEY_SESSION);}catch(e){} }
 var session = sessionGet(); /* {name:'Alex', at:'...'} or null */
+var msgManagerName = null; /* set once a manager PIN unlocks the Messages-tab composer; resets on reload */
 var pendingLogin = null;
 var pendingLoginList = null;
 function staffLoginList(){
@@ -497,15 +497,15 @@ function staffLoginList(){
 
 function renderUserBar(){
   var b=el('userBar'); if(!b) return;
-  if(session){ b.innerHTML='<span>On shift: <b>'+esc(session.name)+'</b></span><button data-act="clockOut">Switch user</button>'; }
-  else { b.innerHTML='<span>Not logged in</span><button data-act="clockIn">Log in</button>'; }
+  if(session){ b.innerHTML='<button data-act="clockOut">Switch user</button><span>On shift: <b>'+esc(session.name)+'</b></span>'; }
+  else { b.innerHTML='<button data-act="clockIn">Log in</button><span>Not logged in</span>'; }
 }
 function openLoginModal(onSuccess){
   pendingLogin=onSuccess;
   var users=staffLoginList();
   pendingLoginList=users;
   if(!users.length){
-    showModal('Log in','<p>No staff have been set up yet. Ask a manager to add staff under <b>Master \u2192 Staff</b>, then try again.</p>');
+    showModal('Log in','<p>No staff have been set up yet. Ask a manager to add staff under <b>Settings \u2192 Users</b>, then try again.</p>');
     return;
   }
   var h='<div class="loginnames">';
@@ -551,7 +551,7 @@ function openDmLoginModal(onSuccess){
   var dms=dmLoginList();
   pendingDmLoginList=dms;
   if(!dms.length){
-    showModal('Team leader sign-off','<p>No team leaders have been set up yet. Ask an admin to add team leaders under <b>Master \u2192 Users</b>, then try again.</p>');
+    showModal('Team leader sign-off','<p>No team leaders have been set up yet. Ask an admin to add team leaders under <b>Settings \u2192 Users</b>, then try again.</p>');
     return;
   }
   var h='<div class="loginnames">';
@@ -688,11 +688,34 @@ function everyoneForMessages(){
 function renderMessagesView(){
   var people=everyoneForMessages();
   var h='<div class="card"><div class="sec-head"><h2>My Messages</h2><span class="prog">See your last 5</span></div><div class="pad">';
-  if(!people.length){ h+='<p class="muted small">No one has been set up yet — ask a manager to add staff under Master.</p></div></div>'; return h; }
+  if(!people.length){ h+='<p class="muted small">No one has been set up yet — ask a manager to add staff under Settings.</p></div></div>'; return h; }
   h+='<p class="small muted" style="margin-top:0">Tap your name, enter your PIN, and you\u2019ll see the last 5 messages left for you \u2014 handy if you\u2019ve forgotten what one said.</p>'+
      '<div class="loginnames">';
   people.forEach(function(p,i){ h+='<button class="btn" data-act="pickMsgViewName" data-id="'+i+'">'+esc(p.name)+'</button>'; });
   h+='</div><div id="msgViewArea" style="margin-top:14px"></div></div></div>';
+
+  h+='<div class="card"><div class="sec-head"><h2>Leave a Message</h2><span class="prog">Kitchen/General/Deputy Managers &amp; Kitchen Team Leaders</span></div><div class="pad">';
+  if(!msgManagerName){
+    h+='<p class="small muted" style="margin-top:0">Enter a manager PIN to post a message for someone, or review what\u2019s queued.</p>'+
+       '<button class="btn primary" data-act="unlockMsgComposer">Unlock</button>';
+  } else {
+    h+='<p class="small muted" style="margin-top:0">Unlocked as <b>'+esc(msgManagerName)+'</b>. <button class="btn sm" style="margin-left:6px" data-act="lockMsgComposer">Lock</button></p>'+
+       '<div class="row"><select class="txt" id="msgTo" style="max-width:240px">';
+    if(!people.length){ h+='<option value="">No one set up yet</option>'; }
+    people.forEach(function(p){ h+='<option value="'+esc(p.name)+'">'+esc(p.name)+' ('+esc(p.role)+')</option>'; });
+    h+='</select></div>'+
+       '<textarea id="msgText" style="min-height:70px;margin-top:10px" placeholder="Message"></textarea>'+
+       '<div class="row" style="margin-top:10px"><button class="btn primary" data-act="sendMessage">Send message</button></div>';
+    var pendingMsgs=(master.messages||[]).filter(function(m){ return !m.read; });
+    h+='<div style="margin-top:16px">';
+    if(!pendingMsgs.length){ h+='<p class="muted small">No messages waiting to be delivered.</p>'; }
+    pendingMsgs.forEach(function(m){
+      h+='<div class="arow"><div><div class="n">To '+esc(m.to)+'</div><div class="small muted">'+esc(m.text)+'<br>From '+esc(m.from)+' &middot; '+esc(m.at)+'</div></div>'+
+         '<div class="btns"><button class="btn sm danger" data-act="delMessage" data-id="'+esc(m.id)+'">Cancel</button></div></div>';
+    });
+    h+='</div>';
+  }
+  h+='</div></div>';
   return h;
 }
 function showMyMessages(idx){
@@ -906,9 +929,9 @@ function renderTabs(){
     var st=week.days[d.k];
     h+='<button class="tab'+(ui.tab===d.k?' active':'')+(i===ti?' today':'')+(st.closed?' done':'')+'" data-tab="'+d.k+'">'+d.short+(st.closed?' ✓':'')+'</button>';
   });
-  h+='<button class="tab'+(ui.tab==='master'?' active':'')+'" data-tab="master">Master</button>';
-  h+='<button class="tab'+(ui.tab==='records'?' active':'')+'" data-tab="records">Records</button>';
   h+='<button class="tab'+(ui.tab==='messages'?' active':'')+'" data-tab="messages">Messages</button>';
+  h+='<button class="tab'+(ui.tab==='master'?' active':'')+'" data-tab="master" style="margin-left:20px">Settings</button>';
+  h+='<button class="tab'+(ui.tab==='records'?' active':'')+'" data-tab="records">Records</button>';
   el('tabs').innerHTML=h;
   el('weeklabel').innerHTML='Week commencing <b>'+shortDate(weekStart)+'</b><br>'+esc(niceDate(new Date()));
 }
@@ -1137,8 +1160,8 @@ function renderDay(dk){
    ===================================================================== */
 function renderMaster(){
   if(!ui.adminLevel){
-    return '<div class="card"><div class="sec-head"><h2>Master tables</h2></div><div class="pad">'+
-      '<p>The master tables hold the defrost pars, prep pars, cleaning lists, staff, and bookings that every day is built from. Enter a PIN to continue.</p>'+
+    return '<div class="card"><div class="sec-head"><h2>Settings</h2></div><div class="pad">'+
+      '<p>Settings holds the defrost pars, prep pars, cleaning lists, staff, and bookings that every day is built from. Enter a PIN to continue.</p>'+
       '<p class="small muted">Kitchen Managers, General Managers, Deputy Managers, and Kitchen Team Leaders can open and change everything here, and can sign off anything. Team Leaders can open Staff and Bookings only.</p>'+
       '<div class="row"><input class="txt" id="pinIn" type="password" autocomplete="off" maxlength="4" placeholder="PIN" onfocus="this.select()" style="max-width:140px">'+
       '<button class="btn primary" data-act="unlock">Unlock</button></div></div></div>';
@@ -1148,7 +1171,7 @@ function renderMaster(){
   h+=masterJumpNav('','top');
   h+='<div class="card noprint"><div class="pad row" style="justify-content:space-between;align-items:center">'+
      '<div><b>Unlocked'+(ui.adminName?(' as '+esc(ui.adminName)):'')+'</b><div class="small muted">'+(full?'Full manager access':'Team leader access — Staff and Bookings only')+'</div></div>'+
-     '<button class="btn" data-act="lock">Lock master tables</button></div></div>';
+     '<button class="btn" data-act="lock">Lock settings</button></div></div>';
 
   if(full){
   h+='<div class="card" id="msec-morning" style="--sc:#c2410c">'+masterJumpNav('morning','inline')+'<div class="sec-head"><h2>Morning cleaning</h2><span class="prog">Unlocked — changes save automatically</span></div>'+
@@ -1338,42 +1361,22 @@ function renderMaster(){
      (master.bookingsSourceUrl?('<p class="small muted" style="margin-top:10px">Today\u2019s link would be: <a href="'+esc(bookingsUrlFor(iso(new Date())))+'" target="_blank" rel="noopener">'+esc(bookingsUrlFor(iso(new Date())))+'</a></p>'):'')+
      '</div></div>';
 
-  /* messages */
-  if(full){
-  var everyone=everyoneForMessages();
-  h+='<div class="card" id="msec-msg" style="--sc:#0e7490">'+masterJumpNav('msg','inline')+'<div class="sec-head"><h2>Messages</h2><span class="prog">Shown once, next time they log in</span></div><div class="pad">'+
-     '<p class="small muted">Only Kitchen/General/Deputy Managers and Kitchen Team Leaders can leave these. Pick anyone with a PIN and it pops up the next time they log in or unlock Master. They can also look up their last 5 messages any time from the <b>Messages</b> tab.</p>'+
-     '<div class="row"><select class="txt" id="msgTo" style="max-width:240px">';
-  if(!everyone.length){ h+='<option value="">No one set up yet</option>'; }
-  everyone.forEach(function(p){ h+='<option value="'+esc(p.name)+'">'+esc(p.name)+' ('+esc(p.role)+')</option>'; });
-  h+='</select></div>'+
-     '<textarea id="msgText" style="min-height:70px;margin-top:10px" placeholder="Message"></textarea>'+
-     '<div class="row" style="margin-top:10px"><button class="btn primary" data-act="sendMessage">Send message</button></div>';
-
-  var pendingMsgs=(master.messages||[]).filter(function(m){ return !m.read; });
-  h+='<div style="margin-top:16px">';
-  if(!pendingMsgs.length){ h+='<p class="muted small">No messages waiting to be delivered.</p>'; }
-  pendingMsgs.forEach(function(m){
-    h+='<div class="arow"><div><div class="n">To '+esc(m.to)+'</div><div class="small muted">'+esc(m.text)+'<br>From '+esc(m.from)+' &middot; '+esc(m.at)+'</div></div>'+
-       '<div class="btns"><button class="btn sm danger" data-act="delMessage" data-id="'+esc(m.id)+'">Cancel</button></div></div>';
-  });
-  h+='</div></div></div>';
-  }
+  /* messages moved to the Messages tab - see renderMessagesView() */
 
   /* settings */
   if(full){
   var badPins=allPinHolders().filter(function(p){ return !/^\d{4}$/.test(String(p.pin||'')); });
-  h+='<div class="card" id="msec-settings" style="--sc:#334155">'+masterJumpNav('settings','inline')+'<div class="sec-head"><h2>Settings</h2></div><div class="pad">';
+  h+='<div class="card" id="msec-settings" style="--sc:#334155">'+masterJumpNav('settings','inline')+'<div class="sec-head"><h2>Advanced</h2></div><div class="pad">';
   if(badPins.length){
-    h+='<div class="banner warn"><h3>Some PINs aren\u2019t 4 digits</h3><p class="small" style="margin:0 0 8px">Sign-in PIN boxes now only accept 4 digits, so these people won\u2019t be able to type their current PIN in full. Give them a new 4-digit PIN under Master (Users / Team Leaders) to fix it:</p><ul>';
+    h+='<div class="banner warn"><h3>Some PINs aren\u2019t 4 digits</h3><p class="small" style="margin:0 0 8px">Sign-in PIN boxes now only accept 4 digits, so these people won\u2019t be able to type their current PIN in full. Give them a new 4-digit PIN under Settings (Users / Team Leaders) to fix it:</p><ul>';
     badPins.forEach(function(p){ h+='<li>'+esc(p.name)+'</li>'; });
     h+='</ul></div>';
   }
   h+='<label style="display:block;font-weight:700;margin:0 0 4px">App title</label>'+
      '<p class="small muted" style="margin-top:0">Shown in the header and the browser tab \u2014 change it to your site name, or anything else. Leave blank to use "Kitchen Tasks".</p>'+
      '<div class="row"><input class="txt" id="appTitleIn" data-m="appTitle" value="'+esc(master.appTitle)+'" placeholder="Kitchen Tasks" style="max-width:320px"></div>'+
-     '<div class="row" style="margin-top:16px"><button class="btn" data-act="expMaster">Download master tables</button>'+
-     '<button class="btn" data-act="impMaster">Restore master tables from file</button>'+
+     '<div class="row" style="margin-top:16px"><button class="btn" data-act="expMaster">Download settings</button>'+
+     '<button class="btn" data-act="impMaster">Restore settings from file</button>'+
      '<button class="btn danger" data-act="resetMaster">Reset to original sheets</button></div>'+
      '<p class="small muted" style="margin-top:14px">Build 2026-08-02</p></div></div>';
 
@@ -1396,7 +1399,7 @@ function renderRecords(){
     '<button class="btn" data-act="dlWeekJson">Download this week (file)</button>'+
     '<button class="btn" data-act="printWeekChecksNow">Print cleaning &amp; closedown checks</button></div>'+
     '<div class="row" style="margin-top:16px"><button class="btn ok" data-act="endWeek">End week &amp; start a fresh one</button></div>'+
-    '<p class="small muted" style="margin-top:8px">This files the week into the records below, carries Sunday\u2019s handover into next Monday, and opens a blank set of sheets. Master pars are kept.</p>'+
+    '<p class="small muted" style="margin-top:8px">This files the week into the records below, carries Sunday\u2019s handover into next Monday, and opens a blank set of sheets. Recurring pars are kept.</p>'+
     '</div></div>';
 
   if(strays.length){
@@ -1842,6 +1845,8 @@ el('view').addEventListener('click',function(e){
     if(countFullManagers()<=1){ alert('Keep at least one Kitchen Manager, General Manager, Deputy Manager, or Kitchen Team Leader, or you\u2019ll lock everyone out of Master.'); return; }
     if(confirm('Remove '+(master.kitchenTeamLeaders[id].name||'this person')+' from kitchen team leaders?')){ master.kitchenTeamLeaders.splice(id,1); saveMaster(); render(); }
   }
+  else if(act==='unlockMsgComposer'){ requireManager(function(name){ msgManagerName=name; render(); }); }
+  else if(act==='lockMsgComposer'){ msgManagerName=null; render(); }
   else if(act==='sendMessage'){
     var toSel=el('msgTo'), msgTxt=el('msgText');
     if(!toSel||!toSel.value){ alert('Pick who this message is for.'); return; }
@@ -1849,7 +1854,7 @@ el('view').addEventListener('click',function(e){
     master.messages=master.messages||[];
     master.messages.push({
       id:'msg'+Date.now()+Math.random().toString(36).slice(2,6),
-      to:toSel.value, from:ui.adminName||'Manager', text:msgTxt.value.trim(), at:stamp(), read:false
+      to:toSel.value, from:msgManagerName||'Manager', text:msgTxt.value.trim(), at:stamp(), read:false
     });
     saveMaster();
     var sentTo=toSel.value;
@@ -1860,11 +1865,11 @@ el('view').addEventListener('click',function(e){
     master.messages=(master.messages||[]).filter(function(m){ return m.id!==id; });
     saveMaster(); render();
   }
-  else if(act==='resetMaster'){ if(confirm('Reset all master tables back to the original spreadsheets? Pars you have changed will be lost.')){ master=DEFAULT_MASTER(); saveMaster(); applyAppTitle(); render(); } }
+  else if(act==='resetMaster'){ if(confirm('Reset all settings back to the original spreadsheets? Pars you have changed will be lost.')){ master=DEFAULT_MASTER(); saveMaster(); applyAppTitle(); render(); } }
   else if(act==='expMaster'){ dl('kitchen-master-'+iso(new Date())+'.json', JSON.stringify(master,null,2), 'application/json'); }
   else if(act==='impMaster'){ pick(function(txt){ try{ var o=JSON.parse(txt); if(!o.defrost) throw 0; master=o;
     if((!master.kitchenManagers||!master.kitchenManagers.length) && master.pin){ master.kitchenManagers=[{name:'Kitchen Manager', pin:master.pin}]; }
-    saveMaster(); applyAppTitle(); render(); alert('Master tables restored.'); }catch(err){ alert('That file could not be read.'); } }); }
+    saveMaster(); applyAppTitle(); render(); alert('Settings restored.'); }catch(err){ alert('That file could not be read.'); } }); }
   else if(act==='pickPhoto'){ var fi=document.getElementById('pf_'+id.replace(':','_')); if(fi) fi.click(); }
   else if(act==='delPhoto'){
     var ci=id.indexOf(':'); clearItemImg(id.slice(0,ci),id.slice(ci+1)); saveMaster(); render();

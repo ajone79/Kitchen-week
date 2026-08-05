@@ -35,7 +35,7 @@ the kitchen's data through the API. To stop that:
 2. Name: `SITE_KEY`. Value: any password you choose, e.g. `sunrise-kitchen-42`.
 3. Redeploy the site (Netlify does this automatically after saving the
    variable, or trigger it under **Deploys → Trigger deploy**).
-4. On each tablet, open the app → **Master → unlock with a Kitchen
+4. On each tablet, open the app → **Settings → unlock with a Kitchen
    Manager, General Manager, Deputy Manager, Kitchen Team Leader, or Team Leader PIN →
    Settings → Shared database**, and type in the same password. Do this once
    per tablet.
@@ -69,7 +69,7 @@ available
 for the current in-progress week ("This week"), and for any filed week
 too, so past weeks can be reprinted for records just as easily.
 
-## Master admin screen
+## Settings admin screen
 **App title** (in Settings) changes what shows in the header and the
 browser tab — defaults to "Kitchen Tasks", but can be set to a site name
 or anything else, per deployment. This only affects the in-app text; the
@@ -80,7 +80,7 @@ home-screen icon label too.
 
 A jump-nav bar at the top (and repeated at the start of every card) lets you
 jump straight to any section — Morning, Defrost, Prep, Weekly, Closedown,
-Staff, Team Leaders, Bookings, Settings — without scrolling through the
+Users, Bookings, Advanced — without scrolling through the
 whole page.
 
 Weekly cleaning and the daily closedown list are edited with one box per
@@ -91,10 +91,10 @@ tasks can each have a reference photo too, shown the same way as the
 others — tap the <b>i</b> next to the task on the day page.
 
 ## Bookings (live link)
-Under **Master → Bookings**, paste the base link to your booking system's
+Under **Settings → Bookings**, paste the base link to your booking system's
 run sheet (e.g. from DesignMyNight) — the part before the date, something
 like `https://admin.designmynight.com/yourvenue/sites/xxxxx/run-sheet`.
-Master shows a preview of what today's link would resolve to, so you can
+Settings shows a preview of what today's link would resolve to, so you can
 check you've pasted the right thing.
 
 Each day's page then gets an **Open today's bookings ↗** button that
@@ -104,7 +104,7 @@ system — not a snapshot — so you'll need to log in there the first time,
 same as normal; the app itself never stores or reads any booking data.
 
 ## Staff login
-Under **Master → Staff**, a manager can add each person's name and a short
+Under **Settings → Staff**, a manager can add each person's name and a short
 PIN. On each tablet, tap **Log in** at the top of the screen, pick your
 name, and enter your PIN — you stay logged in on that tablet until someone
 taps **Switch user**.
@@ -117,42 +117,42 @@ handover. If nobody's logged in yet, ticking a box or tapping a sign-off
 button will prompt you to log in first.
 
 The **team leader sign-off** at closedown is kept separate on purpose.
-Under **Master → Team Leaders**, add each team leader's name and their
+Under **Settings → Team Leaders**, add each team leader's name and their
 own PIN. Tapping **Team leader sign-off** always asks for that PIN there
 and then — it doesn't use whoever happens to be logged in on the tablet —
 so the sign-off can only be completed by an actual team leader.
 
 ## Manager roles &amp; PINs
-Master used to be behind one shared PIN. It's now behind named people at
+Settings used to be behind one shared PIN. It's now behind named people at
 two tiers:
 
 - **Kitchen Managers, General Managers, Deputy Managers,** and **Kitchen
   Team Leaders** — full access, all four identical in what they can do.
-  Any of them can open and change every part of Master (pars, cleaning
+  Any of them can open and change every part of Settings (pars, cleaning
   lists, staff, bookings, settings), and any of them can also sign off
   *anything* elsewhere in the app — chef, team leader, defrost, handover —
   in place of a regular staff or team leader PIN. They're kept as four
   separate named lists (rather than one combined list) so it's clear at a
   glance who holds which title, even though they all do the same thing.
-  Manage them under **Master → Kitchen Managers / General Managers /
+  Manage them under **Settings → Kitchen Managers / General Managers /
   Deputy Managers / Kitchen Team Leaders**.
-- **Team Leaders** — unlock Master too, but only see **Staff** and
+- **Team Leaders** — unlock Settings too, but only see **Staff** and
   **Bookings**: adding/removing staff PINs and setting the bookings link.
   They still do the team leader sign-off at closedown as before. Managed
-  under **Master → Team Leaders**, listed just under Staff (a Kitchen/
+  under **Settings → Team Leaders**, listed just under Staff (a Kitchen/
   General/Deputy Manager or Kitchen Team Leader has to add or remove team
   leaders themselves — Team Leaders can't add more of themselves).
-- **Staff** — no Master access at all; just the ordinary login used to
+- **Staff** — no Settings access at all; just the ordinary login used to
   tick off jobs and sign as chef/defrost.
 
-To keep the jump-nav at the top of Master from being cluttered with six
+To keep the jump-nav at the top of Settings from being cluttered with six
 near-identical chips, all of the above (bar the Team Leaders sign-off
 list) are grouped under one **Users** chip — the individual sections
 themselves are still all there, just not each getting their own link in
 the quick-nav bar.
 
-Whoever unlocks Master (top of the screen, next to **Lock master
-tables**) shows their name and access level, so it's clear who's making
+Whoever unlocks Settings (top of the screen, next to **Lock
+settings**) shows their name and access level, so it's clear who's making
 changes. If a site was set up before this existed, its old single admin
 PIN is carried forward automatically as a named "Kitchen Manager" so
 nobody gets locked out — worth renaming and adding real people once you're
@@ -160,7 +160,7 @@ in.
 
 There's a safeguard stopping the very last person across the four
 full-access lists combined from being removed, so nobody can accidentally
-lock everyone out of Master.
+lock everyone out of Settings.
 
 Every PIN field uses a masked, `type="password"` input rather than a
 plain numeric one — this is deliberate: it's what tells Android/iOS
@@ -179,7 +179,7 @@ simple heads-up, not hardened security — it just tells you the PIN's
 taken so you can pick another. New people added via any "Add" button get
 a random unused 4-digit PIN to start from, rather than everyone landing
 on the same default and clashing immediately. Every PIN box everywhere —
-both the ones under Master where PINs are set, and the ones used to sign
+both the ones under Settings where PINs are set, and the ones used to sign
 in/sign off elsewhere — is capped at 4 digits, so it's consistent
 wherever you're typing one in. If a site somehow already has a PIN longer
 than 4 digits from before this existed, Settings shows a warning listing
@@ -195,7 +195,7 @@ in `public/icons/`, referenced from `public/manifest.json` (Android) and
 an `apple-touch-icon` link (iOS).
 
 ## Item badges &amp; shelf life
-Both **Master → Defrost pars** and **Master → Prep pars** have a small
+Both **Settings → Defrost pars** and **Settings → Prep pars** have a small
 **▸ Advanced** toggle under each item's name — tap it to reveal extra
 options, kept out of the way so the table doesn't get cluttered for items
 that don't need them:
@@ -219,7 +219,7 @@ day (and repeated in each section's header) read "Morning tasks",
 the chip text, the section headings and cards underneath are unchanged.
 
 ## Trail sign-off flag
-In **Master → Weekly**, each task has an "Also needs signing off in
+In **Settings → Weekly**, each task has an "Also needs signing off in
 Trail" checkbox. Tick it for any job that also needs logging in Trail
 separately, and a small "Sign off in Trail" badge appears next to that
 task on the day page, right in the checklist — nothing else about the
@@ -236,13 +236,20 @@ be attached when posting — tap **Add photo**, it's compressed the same way
 other reference photos in the app are, then shows as a thumbnail on the
 posted notice (tap it to view full-size).
 
-## Leaving a message for someone
-Under **Master → Messages** (Kitchen/General Managers only), pick anyone
-with a PIN — staff, a team leader, or another manager — and write them a
-note. It pops up once, the next time that person logs in (staff login,
-team leader sign-off, or unlocking Master), and then it's cleared.
-Messages waiting to go out are listed underneath, with a **Cancel** button
-if you change your mind before it's been seen.
+## Messages
+The **Messages** tab (top bar, right after Sunday) has two parts:
+
+- **My Messages** — anyone taps their name, enters their PIN, and sees
+  the last 5 messages left for them, most recent first, whether or not
+  they've been seen before — handy for going back to reread one.
+- **Leave a Message** — tap **Unlock**, enter a Kitchen/General/Deputy
+  Manager or Kitchen Team Leader PIN, and the composer and list of
+  what's still queued appear. Pick anyone with a PIN, write a note, and
+  it pops up once for them the next time they log in anywhere in the
+  app. Tap **Lock** to hide it again. This stays PIN-gated on this tab
+  the same way it was under Settings before — anyone can open the tab
+  and check their own messages, but only a manager can see what's queued
+  for other people or post something new.
 
 ## Ending a week (and undoing it if that was a mistake)
 **Records → End week & start a fresh one** asks for confirmation, downloads
