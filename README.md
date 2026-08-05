@@ -194,19 +194,22 @@ needed. It's a small checklist motif using the app's own section colours,
 in `public/icons/`, referenced from `public/manifest.json` (Android) and
 an `apple-touch-icon` link (iOS).
 
-## Shelf life once defrosted
-Most defrost items just use the day-dot system (see the Defrost section
-of the User Guide). A few — like streaky bacon, which is good for 7 days
-once it's out rather than needing to be watched day-by-day — need their
-own countdown instead. In **Master → Defrost pars**, each item has an
-optional "day shelf life once out" box; leave it blank for the normal
-day-dot items, or set a number of days for ones that work differently.
+## Defrost badges &amp; shelf life once defrosted
+Each item in **Master → Defrost pars** has a small **▸ Advanced** toggle
+under its name — tap it to reveal extra options, kept out of the way so
+the table doesn't get cluttered for items that don't need them:
 
-Set, it shows a small amber badge on that item on the day page, e.g.
-"7 day life" — tap it and it shows the date it's being taken out (today,
-whichever day you're viewing) and the calculated use-by date, worked out
-fresh from the day's actual date rather than being a fixed date anyone
-has to update.
+- **Badges** — tick any that apply: Raw Fish (blue), Raw Meat (red),
+  Cooked Meat (yellow), Wash Before Use (brown). Shown as small
+  colour-coded tags next to the item on the day page.
+- **Extended shelf life once taken out** — for items that don't fit the
+  usual day-dot system (streaky bacon, say, which is fine for 7 days
+  once out rather than needing daily tracking). Enter the total number
+  of days, counting the day it's taken out as day one — so a 7-day life
+  starting on the 10th runs out on the 16th, not the 17th. Set, it shows
+  an amber "N day life" badge; tap it to see today's date and the
+  calculated use-by date, worked out fresh each time rather than a fixed
+  date anyone has to update.
 
 ## Trail sign-off flag
 In **Master → Weekly**, each task has an "Also needs signing off in
