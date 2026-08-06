@@ -268,12 +268,13 @@ var MASTER_SECTIONS = [
   {key:'closedown',label:'Closedown',color:'#be123c', bg:'#fbe6ec', bd:'#eda3b7', full:true},
   {key:'users',    label:'Users',    color:'#0f766e', bg:'#e6f5f3', bd:'#8fd0c6', full:false},
   {key:'bookings', label:'Bookings', color:'#b45309', bg:'#fef3e2', bd:'#f3c987', full:false},
-  {key:'settings', label:'Advanced', color:'#334155', bg:'#eef1f5', bd:'#c7cfd9', full:true}
+  {key:'settings', label:'Advanced', color:'#334155', bg:'#eef1f5', bd:'#c7cfd9', full:true, topOnly:true}
 ];
 function masterJumpNav(current,cls){
   var h='<nav class="jumpnav'+(cls?' '+cls:'')+'">';
   MASTER_SECTIONS.forEach(function(s){
     if(s.full && ui.adminLevel!=='full') return;
+    if(s.topOnly && !(ui.adminRole==='km'||ui.adminRole==='gm')) return;
     h+='<a href="#msec-'+s.key+'" class="jumpchip'+(s.key===current?' current':'')+'" style="color:'+(s.key===current?'#fff':s.color)+';background:'+(s.key===current?s.color:s.bg)+';border-color:'+(s.key===current?s.color:s.bd)+'">'+esc(s.label)+'</a>';
   });
   h+='</nav>';
@@ -622,15 +623,15 @@ function countFullManagers(){
 }
 function findAdminByPin(pinVal){
   var pools=[
-    {arr:master.kitchenManagers||[], level:'full'},
-    {arr:master.generalManagers||[], level:'full'},
-    {arr:master.deputyManagers||[], level:'full'},
-    {arr:master.kitchenTeamLeaders||[], level:'full'},
-    {arr:master.dutyManagers||[], level:'duty'}
+    {arr:master.kitchenManagers||[], level:'full', role:'km'},
+    {arr:master.generalManagers||[], level:'full', role:'gm'},
+    {arr:master.deputyManagers||[], level:'full', role:'deputy'},
+    {arr:master.kitchenTeamLeaders||[], level:'full', role:'ktl'},
+    {arr:master.dutyManagers||[], level:'duty', role:'dm'}
   ];
   for(var i=0;i<pools.length;i++){
     var hit=pools[i].arr.filter(function(u){ return String(u.pin)===pinVal; })[0];
-    if(hit) return {name:hit.name, level:pools[i].level};
+    if(hit) return {name:hit.name, level:pools[i].level, role:pools[i].role};
   }
   return null;
 }
@@ -787,7 +788,7 @@ function applyAppTitle(){
 applyAppTitle();
 
 /* ---------------- UI state ---------------- */
-var ui = { tab: DK[todayIdx()], adminLevel:null, adminName:'', collapsed:{}, defrostAdv:{}, prepAdv:{} };
+var ui = { tab: DK[todayIdx()], adminLevel:null, adminName:'', adminRole:'', collapsed:{}, defrostAdv:{}, prepAdv:{} };
 var noticeDraftImg = null; /* photo attached to a notice being composed, before it's posted */
 
 /* ---------------- modal ---------------- */
@@ -1167,10 +1168,11 @@ function renderMaster(){
       '<button class="btn primary" data-act="unlock">Unlock</button></div></div></div>';
   }
   var full=ui.adminLevel==='full';
+  var isTopManager=(ui.adminRole==='km'||ui.adminRole==='gm');
   var h='';
   h+=masterJumpNav('','top');
   h+='<div class="card noprint"><div class="pad row" style="justify-content:space-between;align-items:center">'+
-     '<div><b>Unlocked'+(ui.adminName?(' as '+esc(ui.adminName)):'')+'</b><div class="small muted">'+(full?'Full manager access':'Team leader access — Staff and Bookings only')+'</div></div>'+
+     '<div><b>Unlocked'+(ui.adminName?(' as '+esc(ui.adminName)):'')+'</b><div class="small muted">'+(full?(isTopManager?'Full manager access':'Full access — Advanced and Shared database are Kitchen/General Manager only'):'Team leader access — Staff and Bookings only')+'</div></div>'+
      '<button class="btn" data-act="lock">Lock settings</button></div></div>';
 
   if(full){
@@ -1363,8 +1365,8 @@ function renderMaster(){
 
   /* messages moved to the Messages tab - see renderMessagesView() */
 
-  /* settings */
-  if(full){
+  /* settings - Kitchen/General Managers only */
+  if(isTopManager){
   var badPins=allPinHolders().filter(function(p){ return !/^\d{4}$/.test(String(p.pin||'')); });
   h+='<div class="card" id="msec-settings" style="--sc:#334155">'+masterJumpNav('settings','inline')+'<div class="sec-head"><h2>Advanced</h2></div><div class="pad">';
   if(badPins.length){
@@ -1787,10 +1789,10 @@ el('view').addEventListener('click',function(e){
   /* master */
   else if(act==='unlock'){
     var found=findAdminByPin(el('pinIn').value);
-    if(found){ ui.adminLevel=found.level; ui.adminName=found.name; render(); deliverMessagesFor(found.name); }
+    if(found){ ui.adminLevel=found.level; ui.adminName=found.name; ui.adminRole=found.role; render(); deliverMessagesFor(found.name); }
     else alert('Wrong PIN.');
   }
-  else if(act==='lock'){ ui.adminLevel=null; ui.adminName=''; render(); }
+  else if(act==='lock'){ ui.adminLevel=null; ui.adminName=''; ui.adminRole=''; render(); }
   else if(act==='saveSiteKey'){
     SITE_KEY=el('siteKeyIn').value.trim();
     try{ localStorage.setItem('kw.sitekey',SITE_KEY); }catch(e){}

@@ -127,15 +127,18 @@ Settings used to be behind one shared PIN. It's now behind named people at
 two tiers:
 
 - **Kitchen Managers, General Managers, Deputy Managers,** and **Kitchen
-  Team Leaders** — full access, all four identical in what they can do.
-  Any of them can open and change every part of Settings (pars, cleaning
-  lists, staff, bookings, settings), and any of them can also sign off
+  Team Leaders** — full access to the day-to-day parts: pars, cleaning
+  lists, staff, and bookings, and any of them can also sign off
   *anything* elsewhere in the app — chef, team leader, defrost, handover —
   in place of a regular staff or team leader PIN. They're kept as four
   separate named lists (rather than one combined list) so it's clear at a
-  glance who holds which title, even though they all do the same thing.
+  glance who holds which title.
   Manage them under **Settings → Kitchen Managers / General Managers /
   Deputy Managers / Kitchen Team Leaders**.
+  One exception: **Advanced** (app title, backup/restore/reset) and
+  **Shared database** are visible to **Kitchen Managers and General
+  Managers only** — Deputy Managers and Kitchen Team Leaders don't see
+  either card, even though they're full access everywhere else.
 - **Team Leaders** — unlock Settings too, but only see **Staff** and
   **Bookings**: adding/removing staff PINs and setting the bookings link.
   They still do the team leader sign-off at closedown as before. Managed
