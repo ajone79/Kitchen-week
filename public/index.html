@@ -660,14 +660,12 @@ function validatePinField(t,m){
   var val=(t.value||'').trim();
   if(!val) return;
   if(!/^\d{4}$/.test(val)){
-    alert('PINs need to be exactly 4 digits (numbers only).');
-    t.focus();
+    alert('PINs need to be exactly 4 digits (numbers only). Tap the box again to fix it.');
     return;
   }
   var dupe=allPinHolders().filter(function(p){ return p.pin===val && !(p.list===listKey && p.idx===r); })[0];
   if(dupe){
-    alert('That PIN is already used by '+dupe.name+'. Please choose a different one.');
-    t.focus();
+    alert('That PIN is already used by '+dupe.name+'. Tap the box again and choose a different one.');
   }
 }
 function nextFreePin(){
