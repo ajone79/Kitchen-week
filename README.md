@@ -31,14 +31,27 @@ site address now shares the same data.
 Anyone who finds your site's web address could otherwise read or overwrite
 the kitchen's data through the API. To stop that:
 
-1. In Netlify: **Site settings → Environment variables → Add a variable**.
-2. Name: `SITE_KEY`. Value: any password you choose, e.g. `sunrise-kitchen-42`.
-3. Redeploy the site (Netlify does this automatically after saving the
-   variable, or trigger it under **Deploys → Trigger deploy**).
-4. On each tablet, open the app → **Settings → unlock with a Kitchen
-   Manager, General Manager, Deputy Manager, Kitchen Team Leader, or Team Leader PIN →
-   Settings → Shared database**, and type in the same password. Do this once
-   per tablet.
+1. In Netlify, open your site and go to **Project configuration → Environment
+   variables** (this used to be called "Site settings" — same place, Netlify
+   renamed it).
+2. Click **Add a variable** (or **Add environment variables**).
+3. There are two separate boxes — it's easy to mix these up, so double-check
+   before saving:
+   - **Key**: type exactly `SITE_KEY` (all capitals, with the underscore).
+     This box must contain that exact text, not your password.
+   - **Value**: type your chosen password here instead, e.g.
+     `sunrise-kitchen-42`. This box starts empty, usually with an eye icon
+     next to it to reveal what's typed.
+4. Leave everything else as default: **Secret** unticked, **All scopes**
+   selected, **Same value for all deploy contexts** selected.
+5. Save, then redeploy the site so the change takes effect — either push
+   any small change, or go to **Deploys → Trigger deploy → Deploy site**
+   to redeploy without changing any files. Adding the variable alone
+   doesn't apply it until the next deploy.
+6. On each tablet, open the app → **Settings → unlock with a Kitchen
+   Manager, General Manager, Deputy Manager, Kitchen Team Leader, or Team
+   Leader PIN → Advanced → Shared database**, and type in the *same*
+   password you set as the Value in step 3. Do this once per tablet.
 
 If you don't set `SITE_KEY`, the shared database still works — it's just
 open to anyone who has the site's web address, which is usually fine for an
@@ -253,6 +266,21 @@ The **Messages** tab (top bar, right after Sunday) has two parts:
   the same way it was under Settings before — anyone can open the tab
   and check their own messages, but only a manager can see what's queued
   for other people or post something new.
+
+## Change PIN
+The **Change PIN** tab (next to Messages) lets anyone update their own
+PIN — staff, team leaders, or any manager role, no one else's
+permission needed. Tap your name, enter your current PIN to confirm it's
+you, then set a new 4-digit one. Same format/uniqueness checks as
+everywhere else PINs are set — you'll be told if the new one's already
+taken.
+
+## User Guide, right in the app
+A **User Guide** link sits at the top-right, after Records — it opens
+this guide as a PDF in a new tab, so staff can look something up without
+needing their own copy. It's a static file (`public/user-guide.pdf`),
+not generated from the app, so if the guide gets updated, the new PDF
+needs copying into that path and redeploying like any other file.
 
 ## Ending a week (and undoing it if that was a mistake)
 **Records → End week & start a fresh one** asks for confirmation, downloads

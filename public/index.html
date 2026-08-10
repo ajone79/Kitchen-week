@@ -678,12 +678,12 @@ function nextFreePin(){
 }
 function everyoneForMessages(){
   return [].concat(
-    (master.users||[]).map(function(u){ return {name:u.name, pin:u.pin, role:'Staff'}; }),
-    (master.dutyManagers||[]).map(function(u){ return {name:u.name, pin:u.pin, role:'Team Leader'}; }),
-    (master.kitchenManagers||[]).map(function(u){ return {name:u.name, pin:u.pin, role:'Kitchen Manager'}; }),
-    (master.generalManagers||[]).map(function(u){ return {name:u.name, pin:u.pin, role:'General Manager'}; }),
-    (master.deputyManagers||[]).map(function(u){ return {name:u.name, pin:u.pin, role:'Deputy Manager'}; }),
-    (master.kitchenTeamLeaders||[]).map(function(u){ return {name:u.name, pin:u.pin, role:'Kitchen Team Leader'}; })
+    (master.users||[]).map(function(u,i){ return {name:u.name, pin:u.pin, role:'Staff', list:'users', idx:i}; }),
+    (master.dutyManagers||[]).map(function(u,i){ return {name:u.name, pin:u.pin, role:'Team Leader', list:'dutyManagers', idx:i}; }),
+    (master.kitchenManagers||[]).map(function(u,i){ return {name:u.name, pin:u.pin, role:'Kitchen Manager', list:'kitchenManagers', idx:i}; }),
+    (master.generalManagers||[]).map(function(u,i){ return {name:u.name, pin:u.pin, role:'General Manager', list:'generalManagers', idx:i}; }),
+    (master.deputyManagers||[]).map(function(u,i){ return {name:u.name, pin:u.pin, role:'Deputy Manager', list:'deputyManagers', idx:i}; }),
+    (master.kitchenTeamLeaders||[]).map(function(u,i){ return {name:u.name, pin:u.pin, role:'Kitchen Team Leader', list:'kitchenTeamLeaders', idx:i}; })
   );
 }
 function renderMessagesView(){
@@ -734,6 +734,47 @@ function showMyMessages(idx){
   }
   body+='</div>';
   var res=el('msgViewResult'); if(res) res.innerHTML=body;
+}
+
+function renderChangePinView(){
+  var people=everyoneForMessages();
+  var h='<div class="card"><div class="sec-head"><h2>Change My PIN</h2><span class="prog">Anyone can update their own</span></div><div class="pad">';
+  if(!people.length){ h+='<p class="muted small">No one has been set up yet.</p></div></div>'; return h; }
+  h+='<p class="small muted" style="margin-top:0">Tap your name, enter your current PIN to confirm it\u2019s you, then set a new one.</p>'+
+     '<div class="loginnames">';
+  people.forEach(function(p,i){ h+='<button class="btn" data-act="pickChangePinName" data-id="'+i+'">'+esc(p.name)+'</button>'; });
+  h+='</div><div id="changePinArea" style="margin-top:14px"></div></div></div>';
+  return h;
+}
+function showChangePinCurrent(idx){
+  var area=el('changePinArea'); if(!area) return;
+  area.innerHTML='<div class="row"><input class="txt" id="curPin" type="password" autocomplete="off" maxlength="4" placeholder="Current PIN" onfocus="this.select()" style="max-width:160px">'+
+    '<button class="btn primary" data-act="verifyChangePin" data-id="'+idx+'">Continue</button></div><div id="changePinResult" style="margin-top:14px"></div>';
+  var pinEl=el('curPin');
+  if(pinEl){ pinEl.focus(); pinEl.addEventListener('keydown',function(ev){ if(ev.key==='Enter') verifyChangePin(idx); }); }
+}
+function verifyChangePin(idx){
+  var people=everyoneForMessages(), p=people[idx]; if(!p) return;
+  var curEl=el('curPin'); if(!curEl) return;
+  if(curEl.value!==String(p.pin)){ alert('Wrong PIN.'); curEl.value=''; curEl.focus(); return; }
+  var res=el('changePinResult'); if(!res) return;
+  res.innerHTML='<label class="small muted" style="display:block;margin-bottom:4px">New 4-digit PIN</label>'+
+    '<div class="row"><input class="txt" id="newPin" type="password" autocomplete="off" maxlength="4" placeholder="New PIN" onfocus="this.select()" style="max-width:160px">'+
+    '<button class="btn primary" data-act="saveNewPin" data-id="'+idx+'">Save new PIN</button></div>';
+  var newEl=el('newPin');
+  if(newEl){ newEl.focus(); newEl.addEventListener('keydown',function(ev){ if(ev.key==='Enter') saveNewPin(idx); }); }
+}
+function saveNewPin(idx){
+  var people=everyoneForMessages(), p=people[idx]; if(!p) return;
+  var newEl=el('newPin'); if(!newEl) return;
+  var val=(newEl.value||'').trim();
+  if(!/^\d{4}$/.test(val)){ alert('PINs need to be exactly 4 digits.'); newEl.focus(); return; }
+  var dupe=allPinHolders().filter(function(h){ return h.pin===val && !(h.list===p.list && h.idx===p.idx); })[0];
+  if(dupe){ alert('That PIN is already used by '+dupe.name+'. Please choose a different one.'); newEl.focus(); return; }
+  master[p.list][p.idx].pin=val;
+  saveMaster();
+  var res=el('changePinResult');
+  if(res) res.innerHTML='<p style="color:var(--ok);font-weight:700;margin:0">PIN updated \u2014 use it next time you log in.</p>';
 }
 
 /* ---------------- dates ---------------- */
@@ -931,8 +972,10 @@ function renderTabs(){
     h+='<button class="tab'+(ui.tab===d.k?' active':'')+(i===ti?' today':'')+(st.closed?' done':'')+'" data-tab="'+d.k+'">'+d.short+(st.closed?' ✓':'')+'</button>';
   });
   h+='<button class="tab'+(ui.tab==='messages'?' active':'')+'" data-tab="messages">Messages</button>';
+  h+='<button class="tab'+(ui.tab==='changepin'?' active':'')+'" data-tab="changepin">Change PIN</button>';
   h+='<button class="tab'+(ui.tab==='master'?' active':'')+'" data-tab="master" style="margin-left:20px">Settings</button>';
   h+='<button class="tab'+(ui.tab==='records'?' active':'')+'" data-tab="records">Records</button>';
+  h+='<a class="tab" href="/user-guide.pdf" target="_blank" rel="noopener">User Guide</a>';
   el('tabs').innerHTML=h;
   el('weeklabel').innerHTML='Week commencing <b>'+shortDate(weekStart)+'</b><br>'+esc(niceDate(new Date()));
 }
@@ -1439,6 +1482,7 @@ function render(){
   if(ui.tab==='master') v.innerHTML=renderMaster();
   else if(ui.tab==='records') v.innerHTML=renderRecords();
   else if(ui.tab==='messages') v.innerHTML=renderMessagesView();
+  else if(ui.tab==='changepin') v.innerHTML=renderChangePinView();
   else v.innerHTML=renderDay(ui.tab);
   updateProgress();
   applyScrollOffset();
@@ -1475,7 +1519,7 @@ function isSectionOpen(key,complete){
   return !complete;
 }
 function updateProgress(){
-  if(ui.tab==='master'||ui.tab==='records'||ui.tab==='messages') return;
+  if(ui.tab==='master'||ui.tab==='records'||ui.tab==='messages'||ui.tab==='changepin') return;
   var dk=ui.tab, st=week.days[dk];
   var c=sectionCounts(dk,st);
   if(el('pMorning')) el('pMorning').textContent = c.morning.done+' of '+c.morning.total+' done';
@@ -1770,6 +1814,9 @@ el('view').addEventListener('click',function(e){
     if(mvPin){ mvPin.focus(); mvPin.addEventListener('keydown',function(ev){ if(ev.key==='Enter') showMyMessages(parseInt(id,10)); }); }
   }
   else if(act==='viewMyMessages'){ showMyMessages(parseInt(id,10)); }
+  else if(act==='pickChangePinName'){ showChangePinCurrent(parseInt(id,10)); }
+  else if(act==='verifyChangePin'){ verifyChangePin(parseInt(id,10)); }
+  else if(act==='saveNewPin'){ saveNewPin(parseInt(id,10)); }
   else if(act==='toggleSection'){
     if(st){
       var counts2=sectionCounts(dk,st);
