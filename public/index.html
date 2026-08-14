@@ -43,7 +43,7 @@ input,select,textarea,button{font-family:inherit;font-size:16px}
 .wrap{max-width:1180px;margin:0 auto;padding:0 12px}
 
 /* ---------- header ---------- */
-header.app{background:linear-gradient(180deg,#1c2027,var(--brand) 60%);color:#fff;padding:10px 0 0;position:sticky;top:0;z-index:40;box-shadow:0 4px 18px rgba(0,0,0,.24)}
+header.app{background:linear-gradient(180deg,#1c2027,var(--brand) 60%);color:#fff;padding:calc(10px + env(safe-area-inset-top)) 0 0;position:sticky;top:0;z-index:40;box-shadow:0 4px 18px rgba(0,0,0,.24)}
 .hrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:10px}
 .brandmark{height:30px;width:auto;display:block}
