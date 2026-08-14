@@ -211,6 +211,7 @@ input.txt:focus,textarea:focus{outline:none;border-color:var(--accent2);box-shad
       <div class="brand"><img src="/icons/header-mark.png" alt="" class="brandmark" onerror="this.style.display='none'"><h1 id="appTitle">Kitchen Tasks</h1></div>
       <div class="wk" id="weeklabel"></div>
       <div class="wk" id="syncBadge" style="margin-left:12px;opacity:.85"></div>
+      <button type="button" class="btn sm noprint" id="syncNowBtn" title="Pull the latest changes from other devices" style="margin-left:8px">&#8635; Sync now</button>
     </div>
     <div class="tabs" id="tabs"></div>
     <div class="userbar noprint" id="userBar"></div>
@@ -2104,26 +2105,69 @@ function pick(cb){
    Render straight away from whatever is cached on this device so the app is
    never blocked waiting on the network, then quietly pull the latest shared
    copy in the background and re-render if it turns out something changed
-   (e.g. another device updated the master pars, or filed the week). */
+   (e.g. another device updated the master pars, or filed the week).
+
+   That first pull alone isn't enough: once a page has loaded, nothing was
+   ever pulling again after it. Two tablets open at once would just sit on
+   stale data until someone manually reloaded — and on an iPad/iPhone
+   installed as a Home Screen app (standalone PWA), there's no browser
+   chrome at all, so pull-to-refresh doesn't exist and there's no way to
+   force a reload short of deleting and reinstalling the icon. So on top of
+   the initial pull, this also: (1) polls quietly on an interval, (2) pulls
+   whenever the tab/app becomes visible again (covers switching back to an
+   installed iOS PWA after it was backgrounded), and (3) offers a manual
+   "Sync now" button in the header for the same standalone-PWA case, since
+   there's no other refresh gesture available there. */
 render();
 
-function boot(){
+var SYNC_POLL_MS = 20000;
+var syncInFlight = false;
+
+function pullFromServer(isManual){
+  if(syncInFlight) return Promise.resolve();
+  syncInFlight = true;
   setSyncState('syncing');
-  Promise.all([apiGet(KEY_MASTER), apiGet(KEY_WEEK+weekKey), apiGet(KEY_CARRY), apiGet(KEY_IDX)])
+  return Promise.all([apiGet(KEY_MASTER), apiGet(KEY_WEEK+weekKey), apiGet(KEY_CARRY), apiGet(KEY_IDX)])
     .then(function(res){
       var rMaster=res[0], rWeek=res[1], rCarry=res[2], rIdx=res[3];
       if(rMaster===undefined){ setSyncState('offline'); return; } /* server unreachable — stay on local cache */
       var changed=false;
-      if(rMaster){ master=rMaster; ensureMasterDefaults(); lsSetLocal(KEY_MASTER,master); changed=true; }
-      if(rWeek){ week=rWeek; lsSetLocal(KEY_WEEK+weekKey,week); changed=true; }
-      if(rCarry!==undefined && rCarry!==null){ carry=rCarry; lsSetLocal(KEY_CARRY,carry); }
+      if(rMaster && JSON.stringify(rMaster)!==JSON.stringify(master)){ master=rMaster; ensureMasterDefaults(); lsSetLocal(KEY_MASTER,master); changed=true; }
+      if(rWeek && JSON.stringify(rWeek)!==JSON.stringify(week)){ week=rWeek; lsSetLocal(KEY_WEEK+weekKey,week); changed=true; }
+      if(rCarry!==undefined && rCarry!==null && JSON.stringify(rCarry)!==JSON.stringify(carry)){ carry=rCarry; lsSetLocal(KEY_CARRY,carry); changed=true; }
       if(rIdx){ lsSetLocal(KEY_IDX,rIdx); }
       setSyncState('synced');
       if(changed) render();
     })
-    .catch(function(){ setSyncState('offline'); });
+    .catch(function(){ setSyncState('offline'); })
+    .then(function(){
+      syncInFlight = false;
+      if(isManual){
+        var btn=document.getElementById('syncNowBtn');
+        if(btn){ var old=btn.textContent; btn.textContent='\u2713 Synced'; setTimeout(function(){ btn.textContent=old; },1200); }
+      }
+    });
 }
+
+function boot(){ pullFromServer(false); }
 boot();
+
+/* keep pulling quietly while the app is open */
+setInterval(function(){
+  if(document.visibilityState==='visible') pullFromServer(false);
+}, SYNC_POLL_MS);
+
+/* catch the case a standalone iOS PWA gets backgrounded and reopened —
+   there's no reload here, just this tab becoming visible again */
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState==='visible') pullFromServer(false);
+});
+window.addEventListener('focus', function(){ pullFromServer(false); });
+window.addEventListener('pageshow', function(){ pullFromServer(false); });
+
+/* manual fallback — the only "refresh gesture" available once installed as
+   a standalone Home Screen app on iOS, where pull-to-refresh doesn't exist */
+document.getElementById('syncNowBtn').addEventListener('click', function(){ pullFromServer(true); });
 </script>
 </body>
 </html>
