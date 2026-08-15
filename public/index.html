@@ -414,6 +414,7 @@ function DEFAULT_MASTER(){ return {
 
 /* ---------------- storage ---------------- */
 var KEY_MASTER='kw.master', KEY_WEEK='kw.week.', KEY_IDX='kw.archive.index', KEY_ARC='kw.archive.', KEY_CARRY='kw.carry';
+var KEY_IMG='kw.img.'; /* prefix for individually-stored photos — see imgCache/resolveImg below */
 var RETAIN_DAYS=400;
 
 /* ---- shared sync (Netlify Function + Blobs) ----
@@ -438,7 +439,7 @@ var syncState = 'idle'; /* idle | syncing | synced | offline */
    a standalone iOS PWA, which has no pull-to-refresh and won't reload on
    its own. So on top of showing the number, this polls a small version
    file and offers a one-tap reload the moment a newer one is deployed. */
-var APP_VERSION = '2026-08-15.5';
+var APP_VERSION = '2026-08-15.6';
 
 function apiHeaders(){ var h={'Content-Type':'application/json'}; if(SITE_KEY) h['x-site-key']=SITE_KEY; return h; }
 function setSyncState(s){ syncState=s; var b=document.getElementById('syncBadge'); if(b) b.textContent=syncLabel(); }
@@ -492,6 +493,33 @@ function apiList(prefix){
     .catch(function(){ return null; });
 }
 function apiDelete(key){ return fetch(API_BASE,{method:'POST',headers:apiHeaders(),body:JSON.stringify({key:key,action:'delete'})}).catch(function(){}); }
+
+/* ---- photo storage ----
+   An item's .img field holds EITHER a legacy inline "data:image/..." string
+   (old photos, saved directly into the master record) OR a reference like
+   "kw.img.d1699999" pointing at its own separate key. Keeping master light
+   matters because the whole record is what every device re-syncs every ~20s
+   — a reference is a few bytes; an embedded photo can be tens of KB. New
+   photos are always saved as references; resolveImg transparently handles
+   both forms so nothing breaks for photos saved before this change. */
+function isImgRef(v){ return typeof v==='string' && v.indexOf(KEY_IMG)===0; }
+var imgCache = {};
+function resolveImg(ref, cb){
+  if(!ref) return cb('');
+  if(!isImgRef(ref)) return cb(ref); /* legacy inline data URL — already the actual image */
+  if(imgCache[ref]!==undefined) return cb(imgCache[ref]);
+  apiGet(ref).then(function(v){ imgCache[ref]=v||''; cb(imgCache[ref]); });
+}
+/* After any render(), swap real image data into the placeholders once it's
+   fetched — thumbnails show instantly for legacy/cached photos and pop in
+   a moment later for anything freshly resolved. */
+function resolvePendingThumbs(){
+  document.querySelectorAll('img[data-imgref]').forEach(function(im){
+    var ref=im.getAttribute('data-imgref');
+    resolveImg(ref,function(dataUrl){ if(dataUrl) im.src=dataUrl; im.removeAttribute('data-imgref'); });
+  });
+}
+
 
 function lsGet(k,fb){ try{var v=localStorage.getItem(k); return v?JSON.parse(v):fb;}catch(e){return fb;} }
 function lsSetLocal(k,v){ try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){alert('Could not save — device storage may be full. Archive and download an old week to free space.');return false;} }
@@ -1465,7 +1493,16 @@ function renderMaster(){
      '<div class="row"><input class="txt" id="appTitleIn" data-m="appTitle" value="'+esc(master.appTitle)+'" placeholder="Kitchen Tasks" style="max-width:320px"></div>'+
      '<div class="row" style="margin-top:16px"><button class="btn" data-act="expMaster">Download settings</button>'+
      '<button class="btn" data-act="impMaster">Restore settings from file</button>'+
-     '<button class="btn danger" data-act="resetMaster">Reset to original sheets</button></div>'+
+     '<button class="btn danger" data-act="resetMaster">Reset to original sheets</button></div>';
+  var legacyCount=countLegacyPhotos();
+  h+='<div style="margin-top:16px"><label style="display:block;font-weight:700;margin:0 0 4px">Photo storage</label>'+
+     '<p class="small muted" style="margin-top:0">New photos are saved separately from the rest of the data, so they don\u2019t get re-sent to every device on every sync. '+
+     (legacyCount>0
+        ? legacyCount+' older photo'+(legacyCount===1?'':'s')+' '+(legacyCount===1?'is':'are')+' still saved the old way.'
+        : 'All photos are already using the lighter storage.')+
+     '</p>'+
+     (legacyCount>0?'<button class="btn" data-act="migratePhotos">Move '+legacyCount+' photo'+(legacyCount===1?'':'s')+' to lighter storage</button>':'')+
+     '</div>'+
      '<p class="small muted" style="margin-top:14px">Build 2026-08-02</p></div></div>';
 
   h+='<div class="card"><div class="sec-head"><h2>Shared database</h2><span class="prog">'+esc(syncLabel()||'Not yet synced')+'</span></div><div class="pad">'+
@@ -1529,6 +1566,7 @@ function render(){
   else v.innerHTML=renderDay(ui.tab);
   updateProgress();
   applyScrollOffset();
+  resolvePendingThumbs();
 }
 function applyScrollOffset(){
   var hdr=document.querySelector('header.app');
@@ -1630,8 +1668,19 @@ el('view').addEventListener('change',function(e){
     var list=t.getAttribute('data-photo'), r=t.getAttribute('data-r');
     var file=t.files&&t.files[0]; if(!file) return;
     if(!/^image\//.test(file.type)){ alert('Please choose a photo.'); return; }
-    compressImageFile(file,function(dataUrl){ setItemImg(list,r,dataUrl); saveMaster(); render(); },
-      function(){ alert('Could not read that photo — try a different one.'); });
+    var stableId=itemStableId(list,r);
+    compressImageFile(file,function(dataUrl){
+      if(stableId){
+        var imgKey=KEY_IMG+stableId;
+        clearItemImg(list,r); /* releases any previous photo's own storage slot before replacing it */
+        setItemImg(list,r,imgKey);
+        imgCache[imgKey]=dataUrl; /* shows instantly without waiting on a round trip */
+        apiSet(imgKey,dataUrl);
+      } else {
+        setItemImg(list,r,dataUrl); /* shouldn't normally happen — no stable id found for this item */
+      }
+      saveMaster(); render();
+    }, function(){ alert('Could not read that photo — try a different one.'); });
   }
   if(t.id==='noticeImgInput'&&t.type==='file'){
     var nf=t.files&&t.files[0]; if(!nf) return;
@@ -1663,24 +1712,64 @@ function compressImageFile(file,cb,onerr){
   reader.onerror=onerr;
   reader.readAsDataURL(file);
 }
-function setItemImg(list,r,dataUrl){
-  if(list==='d') master.defrost[r].img=dataUrl;
-  else if(list==='p') master.prep[r].img=dataUrl;
-  else if(list==='mo') master.morning[r].img=dataUrl;
-  else if(list==='c') master.closedown[r].img=dataUrl;
-  else if(list==='w'){ var wp=String(r).split(':'); if(master.weekly[wp[0]]&&master.weekly[wp[0]][wp[1]]) master.weekly[wp[0]][wp[1]].img=dataUrl; }
+function itemForImg(list,r){
+  if(list==='d') return master.defrost[r];
+  if(list==='p') return master.prep[r];
+  if(list==='mo') return master.morning[r];
+  if(list==='c') return master.closedown[r];
+  if(list==='w'){ var wp=String(r).split(':'); return (master.weekly[wp[0]]||[])[wp[1]]; }
+  return null;
 }
+function itemStableId(list,r){
+  if(list==='w') return 'w.'+r;
+  var it=itemForImg(list,r);
+  return it && it.id;
+}
+function setItemImg(list,r,val){ var it=itemForImg(list,r); if(it) it.img=val; }
 function clearItemImg(list,r){
-  if(list==='d') delete master.defrost[r].img;
-  else if(list==='p') delete master.prep[r].img;
-  else if(list==='mo') delete master.morning[r].img;
-  else if(list==='c') delete master.closedown[r].img;
-  else if(list==='w'){ var wp=String(r).split(':'); if(master.weekly[wp[0]]&&master.weekly[wp[0]][wp[1]]) delete master.weekly[wp[0]][wp[1]].img; }
+  var it=itemForImg(list,r);
+  if(it && isImgRef(it.img)) apiDelete(it.img); /* free the old photo's own storage slot, not just the reference to it */
+  if(it) delete it.img;
+}
+function countLegacyPhotos(){
+  var n=0;
+  function chk(it){ if(it && it.img && !isImgRef(it.img)) n++; }
+  (master.defrost||[]).forEach(chk);
+  (master.prep||[]).forEach(chk);
+  (master.morning||[]).forEach(chk);
+  (master.closedown||[]).forEach(chk);
+  Object.keys(master.weekly||{}).forEach(function(dk){ (master.weekly[dk]||[]).forEach(chk); });
+  return n;
+}
+function migratePhotos(){
+  var pending=[];
+  function mv(it,stableId){
+    if(it && it.img && !isImgRef(it.img)){
+      var key=KEY_IMG+stableId;
+      imgCache[key]=it.img;
+      pending.push(apiSet(key,it.img));
+      it.img=key;
+    }
+  }
+  (master.defrost||[]).forEach(function(it){ mv(it,it.id); });
+  (master.prep||[]).forEach(function(it){ mv(it,it.id); });
+  (master.morning||[]).forEach(function(it){ mv(it,it.id); });
+  (master.closedown||[]).forEach(function(it){ mv(it,it.id); });
+  Object.keys(master.weekly||{}).forEach(function(dk){
+    (master.weekly[dk]||[]).forEach(function(it,i){ mv(it,'w.'+dk+':'+i); });
+  });
+  Promise.all(pending).then(function(){ saveMaster(); render(); alert('Photos moved to lighter storage.'); });
 }
 function photoCell(list,r,imgVal){
   var uid='pf_'+list+'_'+r;
+  var thumb='';
+  if(imgVal){
+    thumb = isImgRef(imgVal)
+      ? '<img data-imgref="'+esc(imgVal)+'" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--line);background:#f1f3f5">'
+      : '<img src="'+imgVal+'" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--line)">';
+  }
   return '<div style="display:flex;align-items:center;gap:6px;margin-top:4px">'+
-    (imgVal?'<img src="'+imgVal+'" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--line)">':'')+
+    thumb+
     '<button type="button" class="btn sm" data-act="pickPhoto" data-id="'+list+':'+r+'">'+(imgVal?'Change photo':'Add photo')+'</button>'+
     (imgVal?'<button type="button" class="btn sm danger" data-act="delPhoto" data-id="'+list+':'+r+'">Remove</button>':'')+
     '<input type="file" accept="image/*" id="'+uid+'" data-photo="'+list+'" data-r="'+r+'" style="display:none">'+
@@ -1966,6 +2055,9 @@ el('view').addEventListener('click',function(e){
   else if(act==='delPhoto'){
     var ci=id.indexOf(':'); clearItemImg(id.slice(0,ci),id.slice(ci+1)); saveMaster(); render();
   }
+  else if(act==='migratePhotos'){
+    if(confirm('Move older photos to the lighter separate storage now? This can take a moment depending on how many there are.')) migratePhotos();
+  }
 
   /* records */
   else if(act==='dlWeekCsv'){ dl('kitchen-week-'+weekKey+'.csv', weekCsv(week,master), 'text/csv'); }
@@ -2026,8 +2118,13 @@ function showInfo(ref){
   if(kind==='c'){ var c=master.closedown.filter(function(x){return x.id===id;})[0]; if(!c) return;
     title=c.task; body=(c.method?'<b>Method:</b> '+esc(c.method):'')+(c.detail?'<br><br>'+esc(c.detail):'')+(c.note?'<br><br><b>Note:</b> '+esc(c.note):'')+imgTag(c.img); }
   showModal(title,body);
+  resolvePendingThumbs(); /* modal's own image (if any) is a fresh placeholder — resolve it same as any thumbnail */
 }
-function imgTag(src){ return src?'<div style="margin-top:12px"><img src="'+src+'" style="max-width:100%;border-radius:10px;display:block"></div>':''; }
+function imgTag(src){
+  if(!src) return '';
+  if(isImgRef(src)) return '<div style="margin-top:12px"><img data-imgref="'+esc(src)+'" style="max-width:100%;min-height:80px;border-radius:10px;display:block;background:#f1f3f5"></div>';
+  return '<div style="margin-top:12px"><img src="'+src+'" style="max-width:100%;border-radius:10px;display:block"></div>';
+}
 
 /* =====================================================================
    WEEK ROLLOVER + EXPORT
