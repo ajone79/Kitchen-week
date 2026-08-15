@@ -437,7 +437,7 @@ var syncState = 'idle'; /* idle | syncing | synced | offline */
    a standalone iOS PWA, which has no pull-to-refresh and won't reload on
    its own. So on top of showing the number, this polls a small version
    file and offers a one-tap reload the moment a newer one is deployed. */
-var APP_VERSION = '2026-08-15.1';
+var APP_VERSION = '2026-08-15.2';
 
 function apiHeaders(){ var h={'Content-Type':'application/json'}; if(SITE_KEY) h['x-site-key']=SITE_KEY; return h; }
 function setSyncState(s){ syncState=s; var b=document.getElementById('syncBadge'); if(b) b.textContent=syncLabel(); }
@@ -451,13 +451,18 @@ function syncLabel(){
    to the same key always land on the server in the order they were made
    here, and (b) a pull can wait for "everything already queued for this key"
    to finish landing before it asks the server what the current value is.
-   Without this, a background sync poll could ask the server for the latest
-   week data at the exact moment a tick's save was still in flight, get back
-   the pre-tick version, and stomp the tick locally until the next poll —
-   which is exactly the flicker being reported. */
+   On top of that, writeGen counts every local edit per key. A pull records
+   the count for each key before it starts, and after its fetch comes back,
+   only applies that key's server value if the count hasn't moved — i.e. no
+   new tick happened while the pull's own request was in flight. Without
+   this second check, a tick made in the split-second while a poll's fetch
+   was already underway could still get read as "before" the tick on the
+   server and stomp it locally, even with the chain-waiting above. */
 var writeChains = {};
+var writeGen = {};
 function apiSet(key,value){
   setSyncState('syncing');
+  writeGen[key] = (writeGen[key]||0) + 1;
   var queued = (writeChains[key]||Promise.resolve()).then(function(){
     return fetch(API_BASE,{method:'POST',headers:apiHeaders(),body:JSON.stringify({key:key,value:value})})
       .then(function(r){ setSyncState(r.ok?'synced':'offline'); return r.ok; })
@@ -2161,15 +2166,22 @@ function pullFromServer(isManual){
   if(syncInFlight) return Promise.resolve();
   syncInFlight = true;
   setSyncState('syncing');
-  return Promise.all([apiGetFresh(KEY_MASTER), apiGetFresh(KEY_WEEK+weekKey), apiGetFresh(KEY_CARRY), apiGetFresh(KEY_IDX)])
+  var kMaster=KEY_MASTER, kWeek=KEY_WEEK+weekKey, kCarry=KEY_CARRY, kIdx=KEY_IDX;
+  var genBefore = {};
+  genBefore[kMaster]=writeGen[kMaster]||0;
+  genBefore[kWeek]=writeGen[kWeek]||0;
+  genBefore[kCarry]=writeGen[kCarry]||0;
+  genBefore[kIdx]=writeGen[kIdx]||0;
+  function stillFresh(k){ return (writeGen[k]||0)===genBefore[k]; } /* false = a new local edit landed while this pull's request was in flight — keep local, don't overwrite it with what we just fetched */
+  return Promise.all([apiGetFresh(kMaster), apiGetFresh(kWeek), apiGetFresh(kCarry), apiGetFresh(kIdx)])
     .then(function(res){
       var rMaster=res[0], rWeek=res[1], rCarry=res[2], rIdx=res[3];
       if(rMaster===undefined){ setSyncState('offline'); return; } /* server unreachable — stay on local cache */
       var changed=false;
-      if(rMaster && JSON.stringify(rMaster)!==JSON.stringify(master)){ master=rMaster; ensureMasterDefaults(); lsSetLocal(KEY_MASTER,master); changed=true; }
-      if(rWeek && JSON.stringify(rWeek)!==JSON.stringify(week)){ week=rWeek; lsSetLocal(KEY_WEEK+weekKey,week); changed=true; }
-      if(rCarry!==undefined && rCarry!==null && JSON.stringify(rCarry)!==JSON.stringify(carry)){ carry=rCarry; lsSetLocal(KEY_CARRY,carry); changed=true; }
-      if(rIdx){ lsSetLocal(KEY_IDX,rIdx); }
+      if(rMaster && stillFresh(kMaster) && JSON.stringify(rMaster)!==JSON.stringify(master)){ master=rMaster; ensureMasterDefaults(); lsSetLocal(kMaster,master); changed=true; }
+      if(rWeek && stillFresh(kWeek) && JSON.stringify(rWeek)!==JSON.stringify(week)){ week=rWeek; lsSetLocal(kWeek,week); changed=true; }
+      if(rCarry!==undefined && rCarry!==null && stillFresh(kCarry) && JSON.stringify(rCarry)!==JSON.stringify(carry)){ carry=rCarry; lsSetLocal(kCarry,carry); changed=true; }
+      if(rIdx && stillFresh(kIdx)){ lsSetLocal(kIdx,rIdx); }
       setSyncState('synced');
       if(changed) render();
     })
