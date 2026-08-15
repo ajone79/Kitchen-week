@@ -431,18 +431,36 @@ function syncLabel(){
   if(syncState==='offline') return 'Saved on this device only';
   return '';
 }
+/* Every save to a key is chained onto a per-key promise queue, so (a) writes
+   to the same key always land on the server in the order they were made
+   here, and (b) a pull can wait for "everything already queued for this key"
+   to finish landing before it asks the server what the current value is.
+   Without this, a background sync poll could ask the server for the latest
+   week data at the exact moment a tick's save was still in flight, get back
+   the pre-tick version, and stomp the tick locally until the next poll —
+   which is exactly the flicker being reported. */
+var writeChains = {};
 function apiSet(key,value){
   setSyncState('syncing');
-  return fetch(API_BASE,{method:'POST',headers:apiHeaders(),body:JSON.stringify({key:key,value:value})})
-    .then(function(r){ setSyncState(r.ok?'synced':'offline'); return r.ok; })
-    .catch(function(){ setSyncState('offline'); return false; });
+  var queued = (writeChains[key]||Promise.resolve()).then(function(){
+    return fetch(API_BASE,{method:'POST',headers:apiHeaders(),body:JSON.stringify({key:key,value:value})})
+      .then(function(r){ setSyncState(r.ok?'synced':'offline'); return r.ok; })
+      .catch(function(){ setSyncState('offline'); return false; });
+  });
+  writeChains[key] = queued.catch(function(){}); /* keep the chain alive even if a write fails, so later writes still queue correctly */
+  return queued;
 }
+function pendingWrite(key){ return writeChains[key]||Promise.resolve(); }
 function apiGet(key){
   return fetch(API_BASE+'?key='+encodeURIComponent(key),{headers:apiHeaders()})
     .then(function(r){ if(!r.ok) throw 0; return r.json(); })
     .then(function(d){ return d.value===undefined?null:d.value; })
     .catch(function(){ return undefined; }); /* undefined = could not reach the server, distinct from null = not saved yet */
 }
+/* Waits for any save already queued for this key, then fetches — so a pull
+   never reads a value that's about to be overwritten by our own in-flight
+   edit. */
+function apiGetFresh(key){ return pendingWrite(key).then(function(){ return apiGet(key); }); }
 function apiList(prefix){
   return fetch(API_BASE+'?prefix='+encodeURIComponent(prefix||''),{headers:apiHeaders()})
     .then(function(r){ if(!r.ok) throw 0; return r.json(); })
@@ -2127,7 +2145,7 @@ function pullFromServer(isManual){
   if(syncInFlight) return Promise.resolve();
   syncInFlight = true;
   setSyncState('syncing');
-  return Promise.all([apiGet(KEY_MASTER), apiGet(KEY_WEEK+weekKey), apiGet(KEY_CARRY), apiGet(KEY_IDX)])
+  return Promise.all([apiGetFresh(KEY_MASTER), apiGetFresh(KEY_WEEK+weekKey), apiGetFresh(KEY_CARRY), apiGetFresh(KEY_IDX)])
     .then(function(res){
       var rMaster=res[0], rWeek=res[1], rCarry=res[2], rIdx=res[3];
       if(rMaster===undefined){ setSyncState('offline'); return; } /* server unreachable — stay on local cache */
