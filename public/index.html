@@ -262,7 +262,8 @@ var ITEM_BADGES={
   rawfish:{label:'Raw Fish', bg:'#2563eb', fg:'#fff'},
   rawmeat:{label:'Raw Meat', bg:'#c0342a', fg:'#fff'},
   cookedmeat:{label:'Cooked Meat', bg:'#eab308', fg:'#3f2d03'},
-  wash:{label:'Wash Before Use', bg:'#78350f', fg:'#fff'}
+  wash:{label:'Wash Before Use', bg:'#78350f', fg:'#fff'},
+  rawtocooked:{label:'Raw \u2192 Cooked', gradient:'linear-gradient(90deg,#c0342a 0%,#eab308 100%)', fg:'#fff'}
 };
 var MASTER_SECTIONS = [
   {key:'morning',  label:'Morning',  color:'#c2410c', bg:'#fdece3', bd:'#f3b58e', full:true},
@@ -437,7 +438,7 @@ var syncState = 'idle'; /* idle | syncing | synced | offline */
    a standalone iOS PWA, which has no pull-to-refresh and won't reload on
    its own. So on top of showing the number, this polls a small version
    file and offers a one-tap reload the moment a newer one is deployed. */
-var APP_VERSION = '2026-08-15.4';
+var APP_VERSION = '2026-08-15.5';
 
 function apiHeaders(){ var h={'Content-Type':'application/json'}; if(SITE_KEY) h['x-site-key']=SITE_KEY; return h; }
 function setSyncState(s){ syncState=s; var b=document.getElementById('syncBadge'); if(b) b.textContent=syncLabel(); }
@@ -1132,18 +1133,20 @@ function renderDay(dk){
     var r=st.prep[p.id]||{}, tgt=num(p.tg[di]);
     var pbadgeHtml='';
     (p.badges||[]).forEach(function(bk){
-      var bdef=ITEM_BADGES[bk]; if(bdef) pbadgeHtml+='<span class="pill badge" style="background:'+bdef.bg+';color:'+bdef.fg+'">'+esc(bdef.label)+'</span>';
+      var bdef=ITEM_BADGES[bk]; if(bdef) pbadgeHtml+='<span class="pill badge" style="background:'+(bdef.gradient||bdef.bg)+';color:'+bdef.fg+(bdef.gradient?';text-shadow:0 1px 2px rgba(0,0,0,.55)':'')+'">'+esc(bdef.label)+'</span>';
     });
     if(num(p.shelfLifeDays)>0){ pbadgeHtml+='<span class="pill shelflife" data-info="ps:'+p.id+'">'+num(p.shelfLifeDays)+' day life</span>'; }
     if(p.task){
-      h+='<tr><td class="item">'+esc(p.name)+(p.detail||p.img?'<span class="info" data-info="p:'+p.id+'">i</span>':'')+pbadgeHtml+'</td>'+
+      h+='<tr><td class="item">'+esc(p.name)+(p.detail||p.img?'<span class="info" data-info="p:'+p.id+'">i</span>':'')+pbadgeHtml+
+         (p.detail?'<span class="rownote">'+esc(p.detail)+'</span>':'')+'</td>'+
          '<td class="uom">'+esc(p.uom)+'</td><td class="lvl">—</td><td class="muted small">task</td><td class="calc"></td>'+
          '<td class="tick"><input type="checkbox" class="chk" data-f="p.done" data-id="'+p.id+'"'+(r.done?' checked':'')+'></td></tr>';
       return;
     }
     var make=tgt-num(r.have);
     var cell = make>0 ? '<span class="pill need">'+fmt(make)+'</span>' : '<span class="pill zero">ok</span>';
-    h+='<tr><td class="item">'+esc(p.name)+(p.detail||p.img?'<span class="info" data-info="p:'+p.id+'">i</span>':'')+pbadgeHtml+'</td>'+
+    h+='<tr><td class="item">'+esc(p.name)+(p.detail||p.img?'<span class="info" data-info="p:'+p.id+'">i</span>':'')+pbadgeHtml+
+       (p.detail?'<span class="rownote">'+esc(p.detail)+'</span>':'')+'</td>'+
        '<td class="uom">'+esc(p.uom)+'</td><td class="lvl">'+fmt(tgt)+'</td>'+
        '<td><input class="num" inputmode="decimal" data-f="p.have" data-id="'+p.id+'" value="'+esc(r.have)+'"></td>'+
        '<td class="calc" data-make="'+p.id+'">'+cell+'</td>'+
@@ -1182,7 +1185,7 @@ function renderDay(dk){
     if(it.br) h+='<tr class="spacer"><td colspan="7"></td></tr>';
     var badgeHtml='';
     (it.badges||[]).forEach(function(bk){
-      var bdef=ITEM_BADGES[bk]; if(bdef) badgeHtml+='<span class="pill badge" style="background:'+bdef.bg+';color:'+bdef.fg+'">'+esc(bdef.label)+'</span>';
+      var bdef=ITEM_BADGES[bk]; if(bdef) badgeHtml+='<span class="pill badge" style="background:'+(bdef.gradient||bdef.bg)+';color:'+bdef.fg+(bdef.gradient?';text-shadow:0 1px 2px rgba(0,0,0,.55)':'')+'">'+esc(bdef.label)+'</span>';
     });
     if(num(it.shelfLifeDays)>0){ badgeHtml+='<span class="pill shelflife" data-info="s:'+it.id+'">'+num(it.shelfLifeDays)+' day life</span>'; }
     h+='<tr><td class="item">'+esc(it.name)+(it.note||it.img?'<span class="info" data-info="d:'+it.id+'">i</span>':'')+badgeHtml+
@@ -1314,7 +1317,7 @@ function renderMaster(){
   master.prep.forEach(function(p,r){
     var padvOpen=!!ui.prepAdv[p.id];
     h+='<tr><td><input class="txt" style="max-width:180px" data-m="p.name" data-r="'+r+'" value="'+esc(p.name)+'">'+
-       '<div><input class="txt" style="max-width:260px;height:36px;margin-top:4px;font-size:13px" data-m="p.detail" data-r="'+r+'" value="'+esc(p.detail)+'" placeholder="Recipe / method shown on tap"></div>'+
+       '<div><input class="txt" style="max-width:260px;height:36px;margin-top:4px;font-size:13px" data-m="p.detail" data-r="'+r+'" value="'+esc(p.detail)+'" placeholder="Recipe / method — shown under the item name"></div>'+
        '<div style="margin-top:6px"><button type="button" class="btn sm" data-act="togglePrepAdv" data-id="'+p.id+'">'+(padvOpen?'\u25be':'\u25b8')+' Advanced</button></div>';
     if(padvOpen){
       h+='<div style="margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:8px;background:#fafbfc;max-width:280px">'+
