@@ -211,7 +211,10 @@ input.txt:focus,textarea:focus{outline:none;border-color:var(--accent2);box-shad
       <div class="brand"><img src="/icons/header-mark.png" alt="" class="brandmark" onerror="this.style.display='none'"><h1 id="appTitle">Kitchen Tasks</h1></div>
       <div class="wk" id="weeklabel"></div>
       <div class="wk" id="syncBadge" style="margin-left:12px;opacity:.85"></div>
-      <button type="button" class="btn sm noprint" id="syncNowBtn" title="Pull the latest changes from other devices" style="margin-left:8px">&#8635; Sync now</button>
+      <div style="margin-left:8px;display:flex;flex-direction:column;align-items:flex-start;gap:2px">
+        <button type="button" class="btn sm noprint" id="syncNowBtn" title="Pull the latest changes from other devices">&#8635; Sync now</button>
+        <span id="appVersion" style="font-size:11px;opacity:.65"></span>
+      </div>
     </div>
     <div class="tabs" id="tabs"></div>
     <div class="userbar noprint" id="userBar"></div>
@@ -422,6 +425,19 @@ var RETAIN_DAYS=400;
 var API_BASE = '/api/data';
 var SITE_KEY = localStorage.getItem('kw.sitekey') || '';
 var syncState = 'idle'; /* idle | syncing | synced | offline */
+
+/* ---- app version / update detection ----
+   Bump APP_VERSION and public/version.json together on every deploy. The
+   number shown in the header is the version this loaded page is running —
+   if two devices show different numbers, whichever is lower hasn't picked
+   up the latest deploy yet. This matters more than it sounds: pulling data
+   from the server (everything above) never changes the JS code that's
+   already loaded and running on a device. A code fix landing on Netlify
+   does nothing for a tablet that already has the app open — especially as
+   a standalone iOS PWA, which has no pull-to-refresh and won't reload on
+   its own. So on top of showing the number, this polls a small version
+   file and offers a one-tap reload the moment a newer one is deployed. */
+var APP_VERSION = '2026-08-15.1';
 
 function apiHeaders(){ var h={'Content-Type':'application/json'}; if(SITE_KEY) h['x-site-key']=SITE_KEY; return h; }
 function setSyncState(s){ syncState=s; var b=document.getElementById('syncBadge'); if(b) b.textContent=syncLabel(); }
@@ -2186,6 +2202,29 @@ window.addEventListener('pageshow', function(){ pullFromServer(false); });
 /* manual fallback — the only "refresh gesture" available once installed as
    a standalone Home Screen app on iOS, where pull-to-refresh doesn't exist */
 document.getElementById('syncNowBtn').addEventListener('click', function(){ pullFromServer(true); });
+
+/* version display + update check */
+(function(){
+  var vEl = document.getElementById('appVersion');
+  if(vEl) vEl.textContent = 'v'+APP_VERSION;
+})();
+function checkForUpdate(){
+  fetch('/version.json?ts='+Date.now(),{cache:'no-store'})
+    .then(function(r){ return r.ok?r.json():null; })
+    .then(function(d){
+      if(!d || !d.version || d.version===APP_VERSION) return;
+      var vEl = document.getElementById('appVersion');
+      if(!vEl || vEl.dataset.updateShown) return;
+      vEl.dataset.updateShown = '1';
+      vEl.innerHTML = 'v'+APP_VERSION+' — <a href="#" id="updateNowLink" style="color:#fff;text-decoration:underline">update to '+d.version+'</a>';
+      var link = document.getElementById('updateNowLink');
+      if(link) link.addEventListener('click', function(e){ e.preventDefault(); location.reload(); });
+    })
+    .catch(function(){});
+}
+checkForUpdate();
+setInterval(checkForUpdate, SYNC_POLL_MS*3);
+document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible') checkForUpdate(); });
 </script>
 </body>
 </html>
