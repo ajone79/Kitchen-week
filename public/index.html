@@ -263,7 +263,8 @@ var ITEM_BADGES={
   rawmeat:{label:'Raw Meat', bg:'#c0342a', fg:'#fff'},
   cookedmeat:{label:'Cooked Meat', bg:'#eab308', fg:'#3f2d03'},
   wash:{label:'Wash Before Use', bg:'#78350f', fg:'#fff'},
-  rawtocooked:{label:'Raw \u2192 Cooked', gradient:'linear-gradient(90deg,#c0342a 0%,#eab308 100%)', fg:'#fff'}
+  rawtocooked:{label:'Raw \u2192 Cooked', gradient:'linear-gradient(90deg,#c0342a 0%,#eab308 100%)', fg:'#fff'},
+  cookcool:{label:'75\u00b0C \u2192 7\u00b0C / 90min', bg:'#7e22ce', fg:'#fff'}
 };
 var MASTER_SECTIONS = [
   {key:'morning',  label:'Morning',  color:'#c2410c', bg:'#fdece3', bd:'#f3b58e', full:true},
@@ -439,7 +440,7 @@ var syncState = 'idle'; /* idle | syncing | synced | offline */
    a standalone iOS PWA, which has no pull-to-refresh and won't reload on
    its own. So on top of showing the number, this polls a small version
    file and offers a one-tap reload the moment a newer one is deployed. */
-var APP_VERSION = '2026-08-15.6';
+var APP_VERSION = '2026-08-15.7';
 
 function apiHeaders(){ var h={'Content-Type':'application/json'}; if(SITE_KEY) h['x-site-key']=SITE_KEY; return h; }
 function setSyncState(s){ syncState=s; var b=document.getElementById('syncBadge'); if(b) b.textContent=syncLabel(); }
