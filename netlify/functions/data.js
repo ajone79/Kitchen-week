@@ -9,6 +9,13 @@ import { getStore } from '@netlify/blobs';
 // If SITE_KEY is set as an environment variable in the Netlify site settings,
 // every request must include a matching  x-site-key  header, so randoms who
 // find the URL can't read or overwrite the kitchen's data.
+//
+// consistency: 'strong' below is important — Netlify Blobs defaults to
+// "eventual" consistency (fast, edge-cached reads that can lag up to 60s
+// behind the latest write). For a live checklist that's the wrong trade:
+// a tick could get saved, then a sync moments later reads a stale cached
+// copy without it, and it only reappears once the cache catches up. Strong
+// consistency reads a touch slower but always reflects the latest write.
 
 export default async (req) => {
   const cors = {
@@ -32,7 +39,7 @@ export default async (req) => {
     }
   }
 
-  const store = getStore('kitchen-week');
+  const store = getStore({ name: 'kitchen-week', consistency: 'strong' });
   const url = new URL(req.url);
 
   try {

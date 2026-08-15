@@ -437,7 +437,7 @@ var syncState = 'idle'; /* idle | syncing | synced | offline */
    a standalone iOS PWA, which has no pull-to-refresh and won't reload on
    its own. So on top of showing the number, this polls a small version
    file and offers a one-tap reload the moment a newer one is deployed. */
-var APP_VERSION = '2026-08-15.3';
+var APP_VERSION = '2026-08-15.4';
 
 function apiHeaders(){ var h={'Content-Type':'application/json'}; if(SITE_KEY) h['x-site-key']=SITE_KEY; return h; }
 function setSyncState(s){ syncState=s; var b=document.getElementById('syncBadge'); if(b) b.textContent=syncLabel(); }
