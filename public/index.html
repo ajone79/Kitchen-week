@@ -437,7 +437,7 @@ var syncState = 'idle'; /* idle | syncing | synced | offline */
    a standalone iOS PWA, which has no pull-to-refresh and won't reload on
    its own. So on top of showing the number, this polls a small version
    file and offers a one-tap reload the moment a newer one is deployed. */
-var APP_VERSION = '2026-08-15.2';
+var APP_VERSION = '2026-08-15.3';
 
 function apiHeaders(){ var h={'Content-Type':'application/json'}; if(SITE_KEY) h['x-site-key']=SITE_KEY; return h; }
 function setSyncState(s){ syncState=s; var b=document.getElementById('syncBadge'); if(b) b.textContent=syncLabel(); }
@@ -460,9 +460,11 @@ function syncLabel(){
    server and stomp it locally, even with the chain-waiting above. */
 var writeChains = {};
 var writeGen = {};
+var lastLocalEditAt = 0; /* stamped on every local edit, any key — used by pullFromServer to hold off syncing during a burst of active ticking */
 function apiSet(key,value){
   setSyncState('syncing');
   writeGen[key] = (writeGen[key]||0) + 1;
+  lastLocalEditAt = Date.now();
   var queued = (writeChains[key]||Promise.resolve()).then(function(){
     return fetch(API_BASE,{method:'POST',headers:apiHeaders(),body:JSON.stringify({key:key,value:value})})
       .then(function(r){ setSyncState(r.ok?'synced':'offline'); return r.ok; })
@@ -2160,10 +2162,20 @@ function pick(cb){
 render();
 
 var SYNC_POLL_MS = 20000;
+var EDIT_GRACE_MS = 2500; /* don't pull from the server for a few seconds after a local edit — closes the timing window (which seems to be wider over iOS wifi than PC/Android) where a pull's own request could still overlap an in-flight save and read stale data */
 var syncInFlight = false;
+var pullDeferred = false;
 
 function pullFromServer(isManual){
   if(syncInFlight) return Promise.resolve();
+  var sinceEdit = Date.now() - lastLocalEditAt;
+  if(sinceEdit < EDIT_GRACE_MS){
+    if(!pullDeferred){
+      pullDeferred = true;
+      setTimeout(function(){ pullDeferred=false; pullFromServer(isManual); }, (EDIT_GRACE_MS - sinceEdit) + 100);
+    }
+    return Promise.resolve();
+  }
   syncInFlight = true;
   setSyncState('syncing');
   var kMaster=KEY_MASTER, kWeek=KEY_WEEK+weekKey, kCarry=KEY_CARRY, kIdx=KEY_IDX;
