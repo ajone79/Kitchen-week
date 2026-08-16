@@ -15,9 +15,11 @@ import { getStore } from '@netlify/blobs';
 // The tile list is fully flexible — to add, remove, rename, or reorder a
 // metric, just change what's sent in the POST body (i.e. edit the Power
 // Automate flow / the Form it's fed by). No app code changes needed.
-// Each tile's value should be a number 0-100 (shown as a %). status is
-// optional: "green" | "amber" | "red" — colours the number on the tile.
-// If omitted, the tile shows in a neutral colour.
+// Each tile's value can be any number 0-999 (shown as-is, no forced unit —
+// put units like "(%)" in the label itself if relevant, since not every
+// metric is a percentage). status is optional: "green" | "amber" | "red"
+// — colours the number on the tile. If omitted, the tile shows in a
+// neutral colour.
 
 const METRICS_STORE_KEY = 'kw.metrics';
 const MAX_TILES = 8;
@@ -77,7 +79,7 @@ export default async (req) => {
         );
       }
 
-      const clamp = (n) => Math.max(0, Math.min(100, Math.round(Number(n) * 10) / 10));
+      const clamp = (n) => Math.max(0, Math.min(999, Math.round(Number(n) * 10) / 10));
       const validStatus = ['green', 'amber', 'red'];
       const normStatus = (s) => {
         var v = typeof s === 'string' ? s.trim().toLowerCase() : '';

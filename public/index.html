@@ -440,7 +440,7 @@ var syncState = 'idle'; /* idle | syncing | synced | offline */
    a standalone iOS PWA, which has no pull-to-refresh and won't reload on
    its own. So on top of showing the number, this polls a small version
    file and offers a one-tap reload the moment a newer one is deployed. */
-var APP_VERSION = '2026-08-16.3';
+var APP_VERSION = '2026-08-16.4';
 
 function apiHeaders(){ var h={'Content-Type':'application/json'}; if(SITE_KEY) h['x-site-key']=SITE_KEY; return h; }
 function setSyncState(s){ syncState=s; var b=document.getElementById('syncBadge'); if(b) b.textContent=syncLabel(); }
@@ -1106,7 +1106,7 @@ function renderDay(dk){
      hardcoded, so adding/removing/renaming a metric only needs a change to
      the Form + Power Automate flow feeding this endpoint, no app edit. */
   var mTiles = (liveMetrics && liveMetrics.tiles && liveMetrics.tiles.length) ? liveMetrics.tiles : [
-    {label:'KMS', value:87, status:'green'}, {label:'NPS', value:62, status:'amber'}, {label:'Food Quality', value:91, status:'green'}
+    {label:'KMS score (%)', value:87, status:'green'}, {label:'NSF score (%)', value:62, status:'amber'}, {label:'Rep Score', value:347, status:'green'}, {label:'Food G.P (%)', value:91, status:'green'}
   ];
   var metricsBadge = liveMetrics
     ? '<span class="prog">Updated '+esc(fmtDateShort(liveMetrics.updatedAt))+'</span>'
@@ -1116,7 +1116,7 @@ function renderDay(dk){
     : '<p class="small muted" style="margin-top:0">Mock-up for feedback \u2014 these numbers are placeholders, not real data. May or may not end up working like this.</p>';
   var tilesHtml = mTiles.map(function(t){
     var stCls = (t.status==='green'||t.status==='amber'||t.status==='red') ? ' st-'+t.status : '';
-    return '<div class="metrictile"><div class="mval'+stCls+'">'+esc(t.value)+'%</div><div class="mlabel">'+esc(t.label)+'</div></div>';
+    return '<div class="metrictile"><div class="mval'+stCls+'">'+esc(t.value)+'</div><div class="mlabel">'+esc(t.label)+'</div></div>';
   }).join('');
   h+='<div class="card noprint"><div class="sec-head"><h2>How are we doing?</h2>'+metricsBadge+'</div><div class="pad">'+
      metricsNote+
