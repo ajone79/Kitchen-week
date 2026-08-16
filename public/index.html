@@ -151,9 +151,10 @@ td.tick{text-align:center;width:56px}
 .metrictile{flex:1 1 140px;background:#fafbfc;border:1px solid var(--line);border-radius:var(--radius-sm);padding:16px 12px;text-align:center}
 .metrictile .mval{font-family:var(--font-display);font-size:30px;font-weight:700;color:var(--accent2)}
 .metrictile .mlabel{font-size:12px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
-.metrictile:nth-child(1) .mval{color:#0891b2}
-.metrictile:nth-child(2) .mval{color:#7c3aed}
-.metrictile:nth-child(3) .mval{color:#c2410c}
+.metrictile:nth-child(4n+1) .mval{color:#0891b2}
+.metrictile:nth-child(4n+2) .mval{color:#7c3aed}
+.metrictile:nth-child(4n+3) .mval{color:#c2410c}
+.metrictile:nth-child(4n+4) .mval{color:#15803d}
 .noteitem .meta{font-size:12px;color:var(--mut);margin-top:4px}
 
 /* ---------- forms / buttons ---------- */
@@ -440,7 +441,7 @@ var syncState = 'idle'; /* idle | syncing | synced | offline */
    a standalone iOS PWA, which has no pull-to-refresh and won't reload on
    its own. So on top of showing the number, this polls a small version
    file and offers a one-tap reload the moment a newer one is deployed. */
-var APP_VERSION = '2026-08-16.1';
+var APP_VERSION = '2026-08-16.2';
 
 function apiHeaders(){ var h={'Content-Type':'application/json'}; if(SITE_KEY) h['x-site-key']=SITE_KEY; return h; }
 function setSyncState(s){ syncState=s; var b=document.getElementById('syncBadge'); if(b) b.textContent=syncLabel(); }
@@ -1102,24 +1103,24 @@ function renderDay(dk){
      '<p class="small muted" style="margin:8px 0 0">Kitchen or General Manager PIN needed to post or remove.</p></div></div>';
 
   /* ---- KEY METRICS ("How are we doing?") ----
-     Live once /api/metrics has returned a value (populated by the Power
-     Automate flow pulling from Power BI); placeholder mock-up until then. */
-  var mKms = liveMetrics && liveMetrics.kms!==null && liveMetrics.kms!==undefined ? liveMetrics.kms+'%' : '87%';
-  var mNps = liveMetrics && liveMetrics.nps!==null && liveMetrics.nps!==undefined ? liveMetrics.nps+'%' : '62%';
-  var mFood = liveMetrics && liveMetrics.foodQuality!==null && liveMetrics.foodQuality!==undefined ? liveMetrics.foodQuality+'%' : '91%';
+     Fully driven by whatever /api/metrics returns \u2014 the tile list is not
+     hardcoded, so adding/removing/renaming a metric only needs a change to
+     the Form + Power Automate flow feeding this endpoint, no app edit. */
+  var mTiles = (liveMetrics && liveMetrics.tiles && liveMetrics.tiles.length) ? liveMetrics.tiles : [
+    {label:'KMS', value:87}, {label:'NPS', value:62}, {label:'Food Quality', value:91}
+  ];
   var metricsBadge = liveMetrics
     ? '<span class="prog">Updated '+esc(fmtDateShort(liveMetrics.updatedAt))+'</span>'
     : '<span class="prog">Work in progress</span>';
   var metricsNote = liveMetrics
-    ? '<p class="small muted" style="margin-top:0">Live from Power BI.</p>'
+    ? '<p class="small muted" style="margin-top:0">Manually updated \u2014 not a live feed.</p>'
     : '<p class="small muted" style="margin-top:0">Mock-up for feedback \u2014 these numbers are placeholders, not real data. May or may not end up working like this.</p>';
+  var tilesHtml = mTiles.map(function(t){
+    return '<div class="metrictile"><div class="mval">'+esc(t.value)+'%</div><div class="mlabel">'+esc(t.label)+'</div></div>';
+  }).join('');
   h+='<div class="card noprint"><div class="sec-head"><h2>How are we doing?</h2>'+metricsBadge+'</div><div class="pad">'+
      metricsNote+
-     '<div class="metrictiles">'+
-       '<div class="metrictile"><div class="mval">'+mKms+'</div><div class="mlabel">KMS</div></div>'+
-       '<div class="metrictile"><div class="mval">'+mNps+'</div><div class="mlabel">NPS</div></div>'+
-       '<div class="metrictile"><div class="mval">'+mFood+'</div><div class="mlabel">Food Quality</div></div>'+
-     '</div></div></div>';
+     '<div class="metrictiles">'+tilesHtml+'</div></div></div>';
 
   /* ---- handover in ---- */
   if(prev && ((prev.notes&&prev.notes.length)||(prev.open&&prev.open.length))){
@@ -2321,17 +2322,18 @@ function pullFromServer(isManual){
 }
 
 /* ---- "How are we doing?" metrics ----
-   Pulled from /api/metrics, which a Power Automate flow posts to on a
-   schedule from Power BI. liveMetrics stays null until the first
-   successful fetch returns a value; render() falls back to the
-   "Work in progress" placeholder tiles until then. */
+   Pulled from /api/metrics, which a Power Automate flow (fed by a
+   Microsoft Form) posts to whenever the numbers are updated. The tile
+   list is whatever was posted \u2014 fully flexible, no fixed metric names.
+   liveMetrics stays null until the first successful fetch returns a
+   value; render() falls back to the "Work in progress" placeholder
+   tiles until then. */
 var liveMetrics = null;
 function pullMetrics(){
   return fetch('/api/metrics',{headers:apiHeaders()})
     .then(function(r){ if(!r.ok) throw 0; return r.json(); })
     .then(function(d){
-      var hasAny = d && (d.kms!==null && d.kms!==undefined || d.nps!==null && d.nps!==undefined || d.foodQuality!==null && d.foodQuality!==undefined);
-      if(hasAny){ liveMetrics = d; render(); }
+      if(d && Array.isArray(d.tiles) && d.tiles.length){ liveMetrics = d; render(); }
     })
     .catch(function(){ /* leave placeholder tiles showing */ });
 }
