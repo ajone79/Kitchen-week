@@ -149,12 +149,11 @@ td.tick{text-align:center;width:56px}
 .noteitem{background:#fff;border:1px solid #fcd34d;border-radius:var(--radius-sm);padding:9px 11px;margin:6px 0}
 .metrictiles{display:flex;gap:12px;flex-wrap:wrap;margin-top:4px}
 .metrictile{flex:1 1 140px;background:#fafbfc;border:1px solid var(--line);border-radius:var(--radius-sm);padding:16px 12px;text-align:center}
-.metrictile .mval{font-family:var(--font-display);font-size:30px;font-weight:700;color:var(--accent2)}
+.metrictile .mval{font-family:var(--font-display);font-size:30px;font-weight:700;color:var(--mut)}
 .metrictile .mlabel{font-size:12px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
-.metrictile:nth-child(4n+1) .mval{color:#0891b2}
-.metrictile:nth-child(4n+2) .mval{color:#7c3aed}
-.metrictile:nth-child(4n+3) .mval{color:#c2410c}
-.metrictile:nth-child(4n+4) .mval{color:#15803d}
+.metrictile .mval.st-green{color:#15803d}
+.metrictile .mval.st-amber{color:#b45309}
+.metrictile .mval.st-red{color:#b91c1c}
 .noteitem .meta{font-size:12px;color:var(--mut);margin-top:4px}
 
 /* ---------- forms / buttons ---------- */
@@ -441,7 +440,7 @@ var syncState = 'idle'; /* idle | syncing | synced | offline */
    a standalone iOS PWA, which has no pull-to-refresh and won't reload on
    its own. So on top of showing the number, this polls a small version
    file and offers a one-tap reload the moment a newer one is deployed. */
-var APP_VERSION = '2026-08-16.2';
+var APP_VERSION = '2026-08-16.3';
 
 function apiHeaders(){ var h={'Content-Type':'application/json'}; if(SITE_KEY) h['x-site-key']=SITE_KEY; return h; }
 function setSyncState(s){ syncState=s; var b=document.getElementById('syncBadge'); if(b) b.textContent=syncLabel(); }
@@ -1107,7 +1106,7 @@ function renderDay(dk){
      hardcoded, so adding/removing/renaming a metric only needs a change to
      the Form + Power Automate flow feeding this endpoint, no app edit. */
   var mTiles = (liveMetrics && liveMetrics.tiles && liveMetrics.tiles.length) ? liveMetrics.tiles : [
-    {label:'KMS', value:87}, {label:'NPS', value:62}, {label:'Food Quality', value:91}
+    {label:'KMS', value:87, status:'green'}, {label:'NPS', value:62, status:'amber'}, {label:'Food Quality', value:91, status:'green'}
   ];
   var metricsBadge = liveMetrics
     ? '<span class="prog">Updated '+esc(fmtDateShort(liveMetrics.updatedAt))+'</span>'
@@ -1116,7 +1115,8 @@ function renderDay(dk){
     ? '<p class="small muted" style="margin-top:0">Manually updated \u2014 not a live feed.</p>'
     : '<p class="small muted" style="margin-top:0">Mock-up for feedback \u2014 these numbers are placeholders, not real data. May or may not end up working like this.</p>';
   var tilesHtml = mTiles.map(function(t){
-    return '<div class="metrictile"><div class="mval">'+esc(t.value)+'%</div><div class="mlabel">'+esc(t.label)+'</div></div>';
+    var stCls = (t.status==='green'||t.status==='amber'||t.status==='red') ? ' st-'+t.status : '';
+    return '<div class="metrictile"><div class="mval'+stCls+'">'+esc(t.value)+'%</div><div class="mlabel">'+esc(t.label)+'</div></div>';
   }).join('');
   h+='<div class="card noprint"><div class="sec-head"><h2>How are we doing?</h2>'+metricsBadge+'</div><div class="pad">'+
      metricsNote+

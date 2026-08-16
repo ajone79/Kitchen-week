@@ -6,7 +6,7 @@ import { getStore } from '@netlify/blobs';
 //   -> { tiles: [ { label, value }, ... ], updatedAt }
 //   Auth: same shared x-site-key as the rest of the app.
 //
-// POST /api/metrics   { tiles: [ { label, value }, ... ] }
+// POST /api/metrics   { tiles: [ { label, value, status }, ... ] }
 //   -> { ok: true, value: {...} }
 //   Auth: a SEPARATE secret, x-metrics-key, matching the METRICS_KEY env var.
 //   Not the same as SITE_KEY on purpose: this is called from outside the
@@ -15,7 +15,9 @@ import { getStore } from '@netlify/blobs';
 // The tile list is fully flexible — to add, remove, rename, or reorder a
 // metric, just change what's sent in the POST body (i.e. edit the Power
 // Automate flow / the Form it's fed by). No app code changes needed.
-// Each tile's value should be a number 0-100 (shown as a %).
+// Each tile's value should be a number 0-100 (shown as a %). status is
+// optional: "green" | "amber" | "red" — colours the number on the tile.
+// If omitted, the tile shows in a neutral colour.
 
 const METRICS_STORE_KEY = 'kw.metrics';
 const MAX_TILES = 8;
@@ -76,11 +78,20 @@ export default async (req) => {
       }
 
       const clamp = (n) => Math.max(0, Math.min(100, Math.round(Number(n) * 10) / 10));
+      const validStatus = ['green', 'amber', 'red'];
+      const normStatus = (s) => {
+        var v = typeof s === 'string' ? s.trim().toLowerCase() : '';
+        return validStatus.indexOf(v) !== -1 ? v : null;
+      };
 
       const tiles = body.tiles
         .slice(0, MAX_TILES)
         .filter((t) => t && typeof t.label === 'string' && t.label.trim() && !Number.isNaN(Number(t.value)))
-        .map((t) => ({ label: t.label.trim().slice(0, 40), value: clamp(t.value) }));
+        .map((t) => ({
+          label: t.label.trim().slice(0, 40),
+          value: clamp(t.value),
+          status: normStatus(t.status)
+        }));
 
       if (tiles.length === 0) {
         return new Response(
