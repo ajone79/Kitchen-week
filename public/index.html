@@ -440,7 +440,7 @@ var syncState = 'idle'; /* idle | syncing | synced | offline */
    a standalone iOS PWA, which has no pull-to-refresh and won't reload on
    its own. So on top of showing the number, this polls a small version
    file and offers a one-tap reload the moment a newer one is deployed. */
-var APP_VERSION = '2026-08-15.7';
+var APP_VERSION = '2026-08-16.1';
 
 function apiHeaders(){ var h={'Content-Type':'application/json'}; if(SITE_KEY) h['x-site-key']=SITE_KEY; return h; }
 function setSyncState(s){ syncState=s; var b=document.getElementById('syncBadge'); if(b) b.textContent=syncLabel(); }
@@ -889,6 +889,7 @@ function defrostByOf(st){
 function has(v){ return !(v===''||v===null||v===undefined); }
 function fmt(n){ return (Math.round(n*100)/100).toString(); }
 function esc(s){ return String(s===undefined||s===null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtDateShort(iso){ if(!iso) return ''; var d=new Date(iso); if(isNaN(d.getTime())) return ''; var days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; var mons=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return days[d.getDay()]+' '+d.getDate()+' '+mons[d.getMonth()]; }
 function dotFor(i){ return DAYS[(i+2)%7]; }
 function el(id){ return document.getElementById(id); }
 function applyAppTitle(){
@@ -1100,13 +1101,24 @@ function renderDay(dk){
      '<button class="btn primary" data-act="addNotice">Post notice</button></div>'+
      '<p class="small muted" style="margin:8px 0 0">Kitchen or General Manager PIN needed to post or remove.</p></div></div>';
 
-  /* ---- KEY METRICS (mock-up) ---- */
-  h+='<div class="card noprint"><div class="sec-head"><h2>How are we doing?</h2><span class="prog">Work in progress</span></div><div class="pad">'+
-     '<p class="small muted" style="margin-top:0">Mock-up for feedback \u2014 these numbers are placeholders, not real data. May or may not end up working like this.</p>'+
+  /* ---- KEY METRICS ("How are we doing?") ----
+     Live once /api/metrics has returned a value (populated by the Power
+     Automate flow pulling from Power BI); placeholder mock-up until then. */
+  var mKms = liveMetrics && liveMetrics.kms!==null && liveMetrics.kms!==undefined ? liveMetrics.kms+'%' : '87%';
+  var mNps = liveMetrics && liveMetrics.nps!==null && liveMetrics.nps!==undefined ? liveMetrics.nps+'%' : '62%';
+  var mFood = liveMetrics && liveMetrics.foodQuality!==null && liveMetrics.foodQuality!==undefined ? liveMetrics.foodQuality+'%' : '91%';
+  var metricsBadge = liveMetrics
+    ? '<span class="prog">Updated '+esc(fmtDateShort(liveMetrics.updatedAt))+'</span>'
+    : '<span class="prog">Work in progress</span>';
+  var metricsNote = liveMetrics
+    ? '<p class="small muted" style="margin-top:0">Live from Power BI.</p>'
+    : '<p class="small muted" style="margin-top:0">Mock-up for feedback \u2014 these numbers are placeholders, not real data. May or may not end up working like this.</p>';
+  h+='<div class="card noprint"><div class="sec-head"><h2>How are we doing?</h2>'+metricsBadge+'</div><div class="pad">'+
+     metricsNote+
      '<div class="metrictiles">'+
-       '<div class="metrictile"><div class="mval">87%</div><div class="mlabel">KMS</div></div>'+
-       '<div class="metrictile"><div class="mval">62%</div><div class="mlabel">NPS</div></div>'+
-       '<div class="metrictile"><div class="mval">91%</div><div class="mlabel">Food Quality</div></div>'+
+       '<div class="metrictile"><div class="mval">'+mKms+'</div><div class="mlabel">KMS</div></div>'+
+       '<div class="metrictile"><div class="mval">'+mNps+'</div><div class="mlabel">NPS</div></div>'+
+       '<div class="metrictile"><div class="mval">'+mFood+'</div><div class="mlabel">Food Quality</div></div>'+
      '</div></div></div>';
 
   /* ---- handover in ---- */
@@ -2308,7 +2320,23 @@ function pullFromServer(isManual){
     });
 }
 
-function boot(){ pullFromServer(false); }
+/* ---- "How are we doing?" metrics ----
+   Pulled from /api/metrics, which a Power Automate flow posts to on a
+   schedule from Power BI. liveMetrics stays null until the first
+   successful fetch returns a value; render() falls back to the
+   "Work in progress" placeholder tiles until then. */
+var liveMetrics = null;
+function pullMetrics(){
+  return fetch('/api/metrics',{headers:apiHeaders()})
+    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .then(function(d){
+      var hasAny = d && (d.kms!==null && d.kms!==undefined || d.nps!==null && d.nps!==undefined || d.foodQuality!==null && d.foodQuality!==undefined);
+      if(hasAny){ liveMetrics = d; render(); }
+    })
+    .catch(function(){ /* leave placeholder tiles showing */ });
+}
+
+function boot(){ pullFromServer(false); pullMetrics(); }
 boot();
 
 /* keep pulling quietly while the app is open */
@@ -2319,10 +2347,10 @@ setInterval(function(){
 /* catch the case a standalone iOS PWA gets backgrounded and reopened —
    there's no reload here, just this tab becoming visible again */
 document.addEventListener('visibilitychange', function(){
-  if(document.visibilityState==='visible') pullFromServer(false);
+  if(document.visibilityState==='visible'){ pullFromServer(false); pullMetrics(); }
 });
-window.addEventListener('focus', function(){ pullFromServer(false); });
-window.addEventListener('pageshow', function(){ pullFromServer(false); });
+window.addEventListener('focus', function(){ pullFromServer(false); pullMetrics(); });
+window.addEventListener('pageshow', function(){ pullFromServer(false); pullMetrics(); });
 
 /* manual fallback — the only "refresh gesture" available once installed as
    a standalone Home Screen app on iOS, where pull-to-refresh doesn't exist */
