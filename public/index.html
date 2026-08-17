@@ -345,10 +345,10 @@ function DEFAULT_MASTER(){ return {
   salesForecastNote: 'Forecast sales by day of week. Actual is entered on each day\u2019s page once known.',
   salesForecast: [170,196,267,290,508,1646,291],
   metrics: {
-    foodGp:      { curAct:null, curLy:null, ytdAct:null, ytdLy:null, status:'' },
-    repScore:    { cur:null, ytd:null, status:'' },
-    foodQuality: { cur:null, ytd:null, status:'' },
-    kmsLates:    { lastWeek:null, ptd:null, status:'' },
+    foodGp:      { curAct:null, curLy:null, ytdAct:null, ytdLy:null, curStatus:'', ytdStatus:'', vsLyStatus:'' },
+    repScore:    { cur:null, ytd:null, curStatus:'', ytdStatus:'' },
+    foodQuality: { cur:null, ytd:null, curStatus:'', ytdStatus:'' },
+    kmsLates:    { lastWeek:null, ptd:null, lastWeekStatus:'', ptdStatus:'' },
     nsf:         { score:null, lastAudit:'', status:'' },
     eho:         { score:null, lastAudit:'', status:'' }
   },
@@ -456,7 +456,7 @@ var syncState = 'idle'; /* idle | syncing | synced | offline */
    a standalone iOS PWA, which has no pull-to-refresh and won't reload on
    its own. So on top of showing the number, this polls a small version
    file and offers a one-tap reload the moment a newer one is deployed. */
-var APP_VERSION = '2026-08-16.5';
+var APP_VERSION = '2026-08-16.6';
 
 function apiHeaders(){ var h={'Content-Type':'application/json'}; if(SITE_KEY) h['x-site-key']=SITE_KEY; return h; }
 function setSyncState(s){ syncState=s; var b=document.getElementById('syncBadge'); if(b) b.textContent=syncLabel(); }
@@ -546,6 +546,35 @@ function lsDelete(k){ try{localStorage.removeItem(k);}catch(e){} apiDelete(k); }
 function ensureMasterDefaults(){
   var d=DEFAULT_MASTER(),ch=false;
   for(var k in d){ if(!(k in master)){ master[k]=d[k]; ch=true; } }
+  /* migrate business metrics from the old single-status shape to the new
+     per-period status shape (Current / YTD / vs LY colours) */
+  if(master.metrics){
+    var mm=master.metrics;
+    ['foodGp','repScore','foodQuality','kmsLates','nsf','eho'].forEach(function(mk){
+      if(!mm[mk]) return;
+      for(var dk2 in d.metrics[mk]){ if(!(dk2 in mm[mk])){ mm[mk][dk2]=d.metrics[mk][dk2]; ch=true; } }
+    });
+    if(mm.foodGp && mm.foodGp.status!==undefined){
+      if(!mm.foodGp.curStatus) mm.foodGp.curStatus=mm.foodGp.status;
+      if(!mm.foodGp.ytdStatus) mm.foodGp.ytdStatus=mm.foodGp.status;
+      delete mm.foodGp.status; ch=true;
+    }
+    if(mm.repScore && mm.repScore.status!==undefined){
+      if(!mm.repScore.curStatus) mm.repScore.curStatus=mm.repScore.status;
+      if(!mm.repScore.ytdStatus) mm.repScore.ytdStatus=mm.repScore.status;
+      delete mm.repScore.status; ch=true;
+    }
+    if(mm.foodQuality && mm.foodQuality.status!==undefined){
+      if(!mm.foodQuality.curStatus) mm.foodQuality.curStatus=mm.foodQuality.status;
+      if(!mm.foodQuality.ytdStatus) mm.foodQuality.ytdStatus=mm.foodQuality.status;
+      delete mm.foodQuality.status; ch=true;
+    }
+    if(mm.kmsLates && mm.kmsLates.status!==undefined){
+      if(!mm.kmsLates.lastWeekStatus) mm.kmsLates.lastWeekStatus=mm.kmsLates.status;
+      if(!mm.kmsLates.ptdStatus) mm.kmsLates.ptdStatus=mm.kmsLates.status;
+      delete mm.kmsLates.status; ch=true;
+    }
+  }
   /* migrate weekly cleaning items from plain strings to {text,note} if this master was saved before that change */
   for(var wk in master.weekly){
     master.weekly[wk]=(master.weekly[wk]||[]).map(function(item){
@@ -1129,13 +1158,19 @@ function renderDay(dk){
 
   /* ---- KEY METRICS ("How are we doing?") ----
      Driven directly by master.metrics, entered in Settings > Business
-     metrics. Only metrics that have actually been filled in show up;
+     metrics. Shows both period figures (Current/YTD, Last Week/PTD) with
+     their own colour where applicable. Only filled-in figures show up;
      falls back to a placeholder mock-up until anything's been entered. */
   var mt = master.metrics, mTiles = [];
-  if(mt.foodGp.curAct!==null && mt.foodGp.curAct!==undefined) mTiles.push({label:'Food GP %', value:mt.foodGp.curAct+'%', status:mt.foodGp.status});
-  if(mt.repScore.cur!==null && mt.repScore.cur!==undefined) mTiles.push({label:'Rep Score', value:mt.repScore.cur, status:mt.repScore.status});
-  if(mt.foodQuality.cur!==null && mt.foodQuality.cur!==undefined) mTiles.push({label:'Food Quality %', value:mt.foodQuality.cur+'%', status:mt.foodQuality.status});
-  if(mt.kmsLates.lastWeek!==null && mt.kmsLates.lastWeek!==undefined) mTiles.push({label:'KMS Lates %', value:mt.kmsLates.lastWeek+'%', status:mt.kmsLates.status});
+  if(mt.foodGp.curAct!==null && mt.foodGp.curAct!==undefined) mTiles.push({label:'Food GP % (Current)', value:mt.foodGp.curAct+'%', status:mt.foodGp.curStatus});
+  if(mt.foodGp.ytdAct!==null && mt.foodGp.ytdAct!==undefined) mTiles.push({label:'Food GP % (YTD)', value:mt.foodGp.ytdAct+'%', status:mt.foodGp.ytdStatus});
+  if((mt.foodGp.curAct!==null && mt.foodGp.curAct!==undefined && mt.foodGp.curLy!==null && mt.foodGp.curLy!==undefined) || mt.foodGp.vsLyStatus) mTiles.push({label:'Food GP vs LY', value:vsLy(mt.foodGp.curAct,mt.foodGp.curLy), status:mt.foodGp.vsLyStatus});
+  if(mt.repScore.cur!==null && mt.repScore.cur!==undefined) mTiles.push({label:'Rep Score (Current)', value:mt.repScore.cur, status:mt.repScore.curStatus});
+  if(mt.repScore.ytd!==null && mt.repScore.ytd!==undefined) mTiles.push({label:'Rep Score (YTD)', value:mt.repScore.ytd, status:mt.repScore.ytdStatus});
+  if(mt.foodQuality.cur!==null && mt.foodQuality.cur!==undefined) mTiles.push({label:'Food Quality % (Current)', value:mt.foodQuality.cur+'%', status:mt.foodQuality.curStatus});
+  if(mt.foodQuality.ytd!==null && mt.foodQuality.ytd!==undefined) mTiles.push({label:'Food Quality % (YTD)', value:mt.foodQuality.ytd+'%', status:mt.foodQuality.ytdStatus});
+  if(mt.kmsLates.lastWeek!==null && mt.kmsLates.lastWeek!==undefined) mTiles.push({label:'KMS Lates % (Last Week)', value:mt.kmsLates.lastWeek+'%', status:mt.kmsLates.lastWeekStatus});
+  if(mt.kmsLates.ptd!==null && mt.kmsLates.ptd!==undefined) mTiles.push({label:'KMS Lates % (PTD)', value:mt.kmsLates.ptd+'%', status:mt.kmsLates.ptdStatus});
   if(mt.nsf.score!==null && mt.nsf.score!==undefined) mTiles.push({label:'NSF %', value:mt.nsf.score+'%', status:mt.nsf.status});
   if(mt.eho.score) mTiles.push({label:'EHO', value:mt.eho.score, status:mt.eho.status});
   var mHasData = mTiles.length>0;
@@ -1345,23 +1380,25 @@ function renderMetricsSettings(){
   h+='<div class="card" id="msec-metrics" style="--sc:#0891b2">'+masterJumpNav('metrics','inline')+'<div class="sec-head"><h2>Business metrics</h2><span class="prog">Feeds the "How are we doing?" tiles \u2014 typed in manually, whatever cadence suits you</span></div><div class="pad">';
 
   /* Food GP */
-  h+='<div style="margin-bottom:22px"><div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px"><label style="font-weight:700">Food GP</label>'+statusSelect('mt.fg.status',mt.foodGp.status)+'</div>'+
-     '<div class="tblwrap"><table class="grid" style="min-width:520px"><thead><tr><th></th><th>Act %</th><th>LY %</th><th>vs LY %</th></tr></thead><tbody>'+
-     '<tr><td>Current Period</td><td>'+numField('mt.fg.curAct',mt.foodGp.curAct)+'</td><td>'+numField('mt.fg.curLy',mt.foodGp.curLy)+'</td><td class="muted">'+vsLy(mt.foodGp.curAct,mt.foodGp.curLy)+'</td></tr>'+
-     '<tr><td>YTD</td><td>'+numField('mt.fg.ytdAct',mt.foodGp.ytdAct)+'</td><td>'+numField('mt.fg.ytdLy',mt.foodGp.ytdLy)+'</td><td class="muted">'+vsLy(mt.foodGp.ytdAct,mt.foodGp.ytdLy)+'</td></tr>'+
+  h+='<div style="margin-bottom:22px"><label style="font-weight:700;display:block;margin-bottom:8px">Food GP</label>'+
+     '<div class="tblwrap"><table class="grid" style="min-width:640px"><thead><tr><th></th><th>Act %</th><th>LY %</th><th>vs LY %</th><th>Colour</th></tr></thead><tbody>'+
+     '<tr><td>Current Period</td><td>'+numField('mt.fg.curAct',mt.foodGp.curAct)+'</td><td>'+numField('mt.fg.curLy',mt.foodGp.curLy)+'</td><td class="muted">'+vsLy(mt.foodGp.curAct,mt.foodGp.curLy)+'</td><td>'+statusSelect('mt.fg.curStatus',mt.foodGp.curStatus)+'</td></tr>'+
+     '<tr><td>YTD</td><td>'+numField('mt.fg.ytdAct',mt.foodGp.ytdAct)+'</td><td>'+numField('mt.fg.ytdLy',mt.foodGp.ytdLy)+'</td><td class="muted">'+vsLy(mt.foodGp.ytdAct,mt.foodGp.ytdLy)+'</td><td>'+statusSelect('mt.fg.ytdStatus',mt.foodGp.ytdStatus)+'</td></tr>'+
+     '<tr><td>vs LY (overall)</td><td colspan="3" class="muted">Colour reflects how the year-on-year trend is looking</td><td>'+statusSelect('mt.fg.vsLyStatus',mt.foodGp.vsLyStatus)+'</td></tr>'+
      '</tbody></table></div></div>';
 
   /* Guest Feedback */
   h+='<div style="margin-bottom:22px"><label style="font-weight:700;display:block;margin-bottom:8px">Guest Feedback</label>'+
-     '<div class="tblwrap"><table class="grid" style="min-width:520px"><thead><tr><th></th><th>Current Period</th><th>YTD</th><th>Colour</th></tr></thead><tbody>'+
-     '<tr><td>Rep Score</td><td>'+numField('mt.rep.cur',mt.repScore.cur)+'</td><td>'+numField('mt.rep.ytd',mt.repScore.ytd)+'</td><td>'+statusSelect('mt.rep.status',mt.repScore.status)+'</td></tr>'+
-     '<tr><td>Food Quality %</td><td>'+numField('mt.fq.cur',mt.foodQuality.cur)+'</td><td>'+numField('mt.fq.ytd',mt.foodQuality.ytd)+'</td><td>'+statusSelect('mt.fq.status',mt.foodQuality.status)+'</td></tr>'+
+     '<div class="tblwrap"><table class="grid" style="min-width:560px"><thead><tr><th></th><th>Current Period</th><th>Colour</th><th>YTD</th><th>Colour</th></tr></thead><tbody>'+
+     '<tr><td>Rep Score</td><td>'+numField('mt.rep.cur',mt.repScore.cur)+'</td><td>'+statusSelect('mt.rep.curStatus',mt.repScore.curStatus)+'</td><td>'+numField('mt.rep.ytd',mt.repScore.ytd)+'</td><td>'+statusSelect('mt.rep.ytdStatus',mt.repScore.ytdStatus)+'</td></tr>'+
+     '<tr><td>Food Quality %</td><td>'+numField('mt.fq.cur',mt.foodQuality.cur)+'</td><td>'+statusSelect('mt.fq.curStatus',mt.foodQuality.curStatus)+'</td><td>'+numField('mt.fq.ytd',mt.foodQuality.ytd)+'</td><td>'+statusSelect('mt.fq.ytdStatus',mt.foodQuality.ytdStatus)+'</td></tr>'+
      '</tbody></table></div></div>';
 
   /* Speed of Service */
-  h+='<div style="margin-bottom:22px"><div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px"><label style="font-weight:700">Speed of Service \u2014 KMS Lates %</label>'+statusSelect('mt.kms.status',mt.kmsLates.status)+'</div>'+
-     '<div class="tblwrap"><table class="grid" style="min-width:340px"><thead><tr><th>Last Week</th><th>PTD</th></tr></thead><tbody>'+
-     '<tr><td>'+numField('mt.kms.lastWeek',mt.kmsLates.lastWeek)+'</td><td>'+numField('mt.kms.ptd',mt.kmsLates.ptd)+'</td></tr>'+
+  h+='<div style="margin-bottom:22px"><label style="font-weight:700;display:block;margin-bottom:8px">Speed of Service \u2014 KMS Lates %</label>'+
+     '<div class="tblwrap"><table class="grid" style="min-width:400px"><thead><tr><th></th><th>Value</th><th>Colour</th></tr></thead><tbody>'+
+     '<tr><td>Last Week</td><td>'+numField('mt.kms.lastWeek',mt.kmsLates.lastWeek)+'</td><td>'+statusSelect('mt.kms.lastWeekStatus',mt.kmsLates.lastWeekStatus)+'</td></tr>'+
+     '<tr><td>PTD</td><td>'+numField('mt.kms.ptd',mt.kmsLates.ptd)+'</td><td>'+statusSelect('mt.kms.ptdStatus',mt.kmsLates.ptdStatus)+'</td></tr>'+
      '</tbody></table></div></div>';
 
   /* Compliance */
@@ -1952,16 +1989,21 @@ function handleMasterInput(t,m){
   else if(m==='mt.fg.curLy') master.metrics.foodGp.curLy=t.value===''?null:num(t.value);
   else if(m==='mt.fg.ytdAct') master.metrics.foodGp.ytdAct=t.value===''?null:num(t.value);
   else if(m==='mt.fg.ytdLy') master.metrics.foodGp.ytdLy=t.value===''?null:num(t.value);
-  else if(m==='mt.fg.status') master.metrics.foodGp.status=t.value;
+  else if(m==='mt.fg.curStatus') master.metrics.foodGp.curStatus=t.value;
+  else if(m==='mt.fg.ytdStatus') master.metrics.foodGp.ytdStatus=t.value;
+  else if(m==='mt.fg.vsLyStatus') master.metrics.foodGp.vsLyStatus=t.value;
   else if(m==='mt.rep.cur') master.metrics.repScore.cur=t.value===''?null:num(t.value);
   else if(m==='mt.rep.ytd') master.metrics.repScore.ytd=t.value===''?null:num(t.value);
-  else if(m==='mt.rep.status') master.metrics.repScore.status=t.value;
+  else if(m==='mt.rep.curStatus') master.metrics.repScore.curStatus=t.value;
+  else if(m==='mt.rep.ytdStatus') master.metrics.repScore.ytdStatus=t.value;
   else if(m==='mt.fq.cur') master.metrics.foodQuality.cur=t.value===''?null:num(t.value);
   else if(m==='mt.fq.ytd') master.metrics.foodQuality.ytd=t.value===''?null:num(t.value);
-  else if(m==='mt.fq.status') master.metrics.foodQuality.status=t.value;
+  else if(m==='mt.fq.curStatus') master.metrics.foodQuality.curStatus=t.value;
+  else if(m==='mt.fq.ytdStatus') master.metrics.foodQuality.ytdStatus=t.value;
   else if(m==='mt.kms.lastWeek') master.metrics.kmsLates.lastWeek=t.value===''?null:num(t.value);
   else if(m==='mt.kms.ptd') master.metrics.kmsLates.ptd=t.value===''?null:num(t.value);
-  else if(m==='mt.kms.status') master.metrics.kmsLates.status=t.value;
+  else if(m==='mt.kms.lastWeekStatus') master.metrics.kmsLates.lastWeekStatus=t.value;
+  else if(m==='mt.kms.ptdStatus') master.metrics.kmsLates.ptdStatus=t.value;
   else if(m==='mt.nsf.score') master.metrics.nsf.score=t.value===''?null:num(t.value);
   else if(m==='mt.nsf.lastAudit') master.metrics.nsf.lastAudit=t.value;
   else if(m==='mt.nsf.status') master.metrics.nsf.status=t.value;
