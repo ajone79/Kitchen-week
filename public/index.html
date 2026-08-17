@@ -154,6 +154,10 @@ td.tick{text-align:center;width:56px}
 .metrictile .mval.st-green{color:#15803d}
 .metrictile .mval.st-amber{color:#b45309}
 .metrictile .mval.st-red{color:#b91c1c}
+.st-select{font-weight:700}
+.st-select.st-green{background:#e7f5ec;border-color:#9bd8b1;color:#15803d}
+.st-select.st-amber{background:#fef3e2;border-color:#f3c987;color:#b45309}
+.st-select.st-red{background:#fbe6ec;border-color:#eda3b7;color:#b91c1c}
 .noteitem .meta{font-size:12px;color:var(--mut);margin-top:4px}
 
 /* ---------- forms / buttons ---------- */
@@ -268,10 +272,12 @@ var ITEM_BADGES={
 };
 var MASTER_SECTIONS = [
   {key:'morning',  label:'Morning',  color:'#c2410c', bg:'#fdece3', bd:'#f3b58e', full:true},
-  {key:'defrost',  label:'Defrost',  color:'#2563eb', bg:'#e7edfd', bd:'#a9bdf5', full:true},
+  {key:'sales',    label:'Sales',    color:'#15803d', bg:'#e7f5ec', bd:'#9bd8b1', full:true},
   {key:'prep',     label:'Prep',     color:'#0891b2', bg:'#e1f4f8', bd:'#94d3e0', full:true},
   {key:'weekly',   label:'Weekly',   color:'#7c3aed', bg:'#f0eafd', bd:'#c8b3f6', full:true},
+  {key:'defrost',  label:'Defrost',  color:'#2563eb', bg:'#e7edfd', bd:'#a9bdf5', full:true},
   {key:'closedown',label:'Closedown',color:'#be123c', bg:'#fbe6ec', bd:'#eda3b7', full:true},
+  {key:'metrics',  label:'Metrics',  color:'#0891b2', bg:'#e1f4f8', bd:'#94d3e0', full:true},
   {key:'users',    label:'Users',    color:'#0f766e', bg:'#e6f5f3', bd:'#8fd0c6', full:false},
   {key:'bookings', label:'Bookings', color:'#b45309', bg:'#fef3e2', bd:'#f3c987', full:false},
   {key:'settings', label:'Advanced', color:'#334155', bg:'#eef1f5', bd:'#c7cfd9', full:true, topOnly:true}
@@ -336,6 +342,16 @@ function DEFAULT_MASTER(){ return {
       note:'1 pack tortillas = 6 portions of quesadillas.'},
     {id:'tandoori',  name:'Tandoori Chicken', uom:'packs',          lv:[1.5,1.5,1.5,1.5,2,2,1.5]}
   ],
+  salesForecastNote: 'Forecast sales by day of week. Actual is entered on each day\u2019s page once known.',
+  salesForecast: [170,196,267,290,508,1646,291],
+  metrics: {
+    foodGp:      { curAct:null, curLy:null, ytdAct:null, ytdLy:null, status:'' },
+    repScore:    { cur:null, ytd:null, status:'' },
+    foodQuality: { cur:null, ytd:null, status:'' },
+    kmsLates:    { lastWeek:null, ptd:null, status:'' },
+    nsf:         { score:null, lastAudit:'', status:'' },
+    eho:         { score:null, lastAudit:'', status:'' }
+  },
   prep: [
     {id:'goujons',  name:'Fish Goujons',        uom:'fish',      detail:'1 fish into 8.', tg:[2,2,2,2,2,2,2]},
     {id:'bkbacon',  name:'Back Bacon (Brunch)', uom:'packs',     tg:[1,1,1,1,2,3,1]},
@@ -440,7 +456,7 @@ var syncState = 'idle'; /* idle | syncing | synced | offline */
    a standalone iOS PWA, which has no pull-to-refresh and won't reload on
    its own. So on top of showing the number, this polls a small version
    file and offers a one-tap reload the moment a newer one is deployed. */
-var APP_VERSION = '2026-08-16.4';
+var APP_VERSION = '2026-08-16.5';
 
 function apiHeaders(){ var h={'Content-Type':'application/json'}; if(SITE_KEY) h['x-site-key']=SITE_KEY; return h; }
 function setSyncState(s){ syncState=s; var b=document.getElementById('syncBadge'); if(b) b.textContent=syncLabel(); }
@@ -858,7 +874,7 @@ function stamp(){ var n=new Date(); return iso(n)+' '+pad(n.getHours())+':'+pad(
 function todayIdx(){ return (new Date().getDay()+6)%7; }
 
 /* ---------------- week state ---------------- */
-function blankDay(){ return {morning:{},defrost:{},defrostBy:{ini:'',at:''},prep:{},weekly:{},closedown:{},temp:'',chef:{ini:'',at:''},dm:{ini:'',at:''},notes:[],ack:null,closed:false,closedAt:''}; }
+function blankDay(){ return {morning:{},defrost:{},defrostBy:{ini:'',at:''},prep:{},weekly:{},closedown:{},temp:'',chef:{ini:'',at:''},dm:{ini:'',at:''},notes:[],ack:null,closed:false,closedAt:'',salesActual:null}; }
 function blankWeek(ws){ var w={weekStart:iso(ws),created:stamp(),days:{}}; DK.forEach(function(k){ w.days[k]=blankDay(); }); return w; }
 
 var weekStart = mondayOf(new Date());
@@ -1068,6 +1084,16 @@ function openTasksFor(dk){
   return out;
 }
 
+function salesHeaderBadge(di,st){
+  var fc=master.salesForecast[di];
+  var act=st.salesActual;
+  if(act===null||act===undefined||act===''){
+    return '<span class="prog" style="background:#e7f5ec;color:#15803d;border-color:#9bd8b1">Forecast \u00a3'+esc(fc)+'</span>';
+  }
+  var diff=Math.round(act-fc), pct=fc?Math.round((diff/fc)*1000)/10:0;
+  var up=diff>=0;
+  return '<span class="prog" style="background:'+(up?'#e7f5ec':'#fbe6ec')+';color:'+(up?'#15803d':'#b91c1c')+';border-color:'+(up?'#9bd8b1':'#eda3b7')+'">Forecast \u00a3'+esc(fc)+' &middot; Actual \u00a3'+esc(act)+' ('+(up?'+':'')+pct+'%)</span>';
+}
 function renderDay(dk){
   var di=DK.indexOf(dk), d=DAYS[di], st=week.days[dk], dt=addDays(weekStart,di), dot=dotFor(di);
   var counts=sectionCounts(dk,st);
@@ -1080,7 +1106,7 @@ function renderDay(dk){
                   : (carry ? {k:'carry', label:'last Sunday', notes:carry.notes||[], open:carry.open||[]} : null);
   var h='';
 
-  h+='<div class="daytitle"><h2>'+d.label+'</h2><span class="dt">'+esc(shortDate(dt))+'</span></div>';
+  h+='<div class="daytitle"><h2>'+d.label+'</h2><span class="dt">'+esc(shortDate(dt))+'</span>'+salesHeaderBadge(di,st)+'</div>';
   h+=jumpNav('','top');
 
   /* ---- NOTICE BOARD ---- */
@@ -1102,17 +1128,27 @@ function renderDay(dk){
      '<p class="small muted" style="margin:8px 0 0">Kitchen or General Manager PIN needed to post or remove.</p></div></div>';
 
   /* ---- KEY METRICS ("How are we doing?") ----
-     Fully driven by whatever /api/metrics returns \u2014 the tile list is not
-     hardcoded, so adding/removing/renaming a metric only needs a change to
-     the Form + Power Automate flow feeding this endpoint, no app edit. */
-  var mTiles = (liveMetrics && liveMetrics.tiles && liveMetrics.tiles.length) ? liveMetrics.tiles : [
-    {label:'KMS score (%)', value:87, status:'green'}, {label:'NSF score (%)', value:62, status:'amber'}, {label:'Rep Score', value:347, status:'green'}, {label:'Food G.P (%)', value:91, status:'green'}
-  ];
-  var metricsBadge = liveMetrics
-    ? '<span class="prog">Updated '+esc(fmtDateShort(liveMetrics.updatedAt))+'</span>'
+     Driven directly by master.metrics, entered in Settings > Business
+     metrics. Only metrics that have actually been filled in show up;
+     falls back to a placeholder mock-up until anything's been entered. */
+  var mt = master.metrics, mTiles = [];
+  if(mt.foodGp.curAct!==null && mt.foodGp.curAct!==undefined) mTiles.push({label:'Food GP %', value:mt.foodGp.curAct+'%', status:mt.foodGp.status});
+  if(mt.repScore.cur!==null && mt.repScore.cur!==undefined) mTiles.push({label:'Rep Score', value:mt.repScore.cur, status:mt.repScore.status});
+  if(mt.foodQuality.cur!==null && mt.foodQuality.cur!==undefined) mTiles.push({label:'Food Quality %', value:mt.foodQuality.cur+'%', status:mt.foodQuality.status});
+  if(mt.kmsLates.lastWeek!==null && mt.kmsLates.lastWeek!==undefined) mTiles.push({label:'KMS Lates %', value:mt.kmsLates.lastWeek+'%', status:mt.kmsLates.status});
+  if(mt.nsf.score!==null && mt.nsf.score!==undefined) mTiles.push({label:'NSF %', value:mt.nsf.score+'%', status:mt.nsf.status});
+  if(mt.eho.score) mTiles.push({label:'EHO', value:mt.eho.score, status:mt.eho.status});
+  var mHasData = mTiles.length>0;
+  if(!mHasData){
+    mTiles = [
+      {label:'KMS score (%)', value:87, status:'green'}, {label:'NSF score (%)', value:62, status:'amber'}, {label:'Rep Score', value:347, status:'green'}, {label:'Food G.P (%)', value:91, status:'green'}
+    ];
+  }
+  var metricsBadge = mHasData
+    ? '<span class="prog">Set in Settings</span>'
     : '<span class="prog">Work in progress</span>';
-  var metricsNote = liveMetrics
-    ? '<p class="small muted" style="margin-top:0">Manually updated \u2014 not a live feed.</p>'
+  var metricsNote = mHasData
+    ? '<p class="small muted" style="margin-top:0">Manually updated \u2014 not a live feed. Update anytime in Settings &gt; Business metrics.</p>'
     : '<p class="small muted" style="margin-top:0">Mock-up for feedback \u2014 these numbers are placeholders, not real data. May or may not end up working like this.</p>';
   var tilesHtml = mTiles.map(function(t){
     var stCls = (t.status==='green'||t.status==='amber'||t.status==='red') ? ' st-'+t.status : '';
@@ -1255,7 +1291,9 @@ function renderDay(dk){
        (r.done?'<div class="stampbox"><b>'+esc(r.ini)+'</b><span class="stamp">'+esc(r.at)+'</span></div>':'')+'</div>';
   });
   h+='<div class="signrow"><div style="flex:1;min-width:240px"><label>'+esc(master.tempQuestion)+'</label>'+
-     '<input class="txt" data-f="temp" value="'+esc(st.temp)+'" placeholder="Answer"></div></div>';
+     '<input class="txt" data-f="temp" value="'+esc(st.temp)+'" placeholder="Answer"></div>'+
+     '<div style="flex:1;min-width:200px"><label>Actual sales (\u00a3)</label>'+
+     '<input class="num" inputmode="decimal" data-f="salesActual" value="'+esc(st.salesActual===null||st.salesActual===undefined?'':st.salesActual)+'" placeholder="Forecast \u00a3'+esc(master.salesForecast[di])+'"></div></div>';
   h+='<div class="signrow">'+
      '<div><label>Closing chef initials</label>'+(st.chef.at
         ? '<div><b>'+esc(st.chef.ini)+'</b> <span class="stamp">'+esc(st.chef.at)+'</span></div>'
@@ -1287,6 +1325,55 @@ function renderDay(dk){
 /* =====================================================================
    MASTER (admin)
    ===================================================================== */
+function statusSelect(dataM, current){
+  var opts=[['','\u2014'],['green','Green'],['amber','Amber'],['red','Red']];
+  var h='<select class="txt st-select st-'+(current||'none')+'" data-m="'+dataM+'">';
+  opts.forEach(function(o){ h+='<option value="'+o[0]+'"'+(o[0]===(current||'')?' selected':'')+'>'+o[1]+'</option>'; });
+  h+='</select>';
+  return h;
+}
+function numField(dataM,val){ return '<input class="num" inputmode="decimal" style="max-width:90px" data-m="'+dataM+'" value="'+esc(val===null||val===undefined?'':val)+'" placeholder="\u2014">'; }
+function txtField(dataM,val,ph){ return '<input class="txt" style="max-width:120px" data-m="'+dataM+'" value="'+esc(val||'')+'" placeholder="'+esc(ph||'')+'">'; }
+function dateField(dataM,val){ return '<input class="txt" type="date" style="max-width:150px" data-m="'+dataM+'" value="'+esc(val||'')+'">'; }
+function vsLy(act,ly){
+  if(act===null||act===undefined||ly===null||ly===undefined) return '\u2014';
+  var d=Math.round((act-ly)*10)/10;
+  return (d>0?'+':'')+d+'%';
+}
+function renderMetricsSettings(){
+  var mt=master.metrics, h='';
+  h+='<div class="card" id="msec-metrics" style="--sc:#0891b2">'+masterJumpNav('metrics','inline')+'<div class="sec-head"><h2>Business metrics</h2><span class="prog">Feeds the "How are we doing?" tiles \u2014 typed in manually, whatever cadence suits you</span></div><div class="pad">';
+
+  /* Food GP */
+  h+='<div style="margin-bottom:22px"><div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px"><label style="font-weight:700">Food GP</label>'+statusSelect('mt.fg.status',mt.foodGp.status)+'</div>'+
+     '<div class="tblwrap"><table class="grid" style="min-width:520px"><thead><tr><th></th><th>Act %</th><th>LY %</th><th>vs LY %</th></tr></thead><tbody>'+
+     '<tr><td>Current Period</td><td>'+numField('mt.fg.curAct',mt.foodGp.curAct)+'</td><td>'+numField('mt.fg.curLy',mt.foodGp.curLy)+'</td><td class="muted">'+vsLy(mt.foodGp.curAct,mt.foodGp.curLy)+'</td></tr>'+
+     '<tr><td>YTD</td><td>'+numField('mt.fg.ytdAct',mt.foodGp.ytdAct)+'</td><td>'+numField('mt.fg.ytdLy',mt.foodGp.ytdLy)+'</td><td class="muted">'+vsLy(mt.foodGp.ytdAct,mt.foodGp.ytdLy)+'</td></tr>'+
+     '</tbody></table></div></div>';
+
+  /* Guest Feedback */
+  h+='<div style="margin-bottom:22px"><label style="font-weight:700;display:block;margin-bottom:8px">Guest Feedback</label>'+
+     '<div class="tblwrap"><table class="grid" style="min-width:520px"><thead><tr><th></th><th>Current Period</th><th>YTD</th><th>Colour</th></tr></thead><tbody>'+
+     '<tr><td>Rep Score</td><td>'+numField('mt.rep.cur',mt.repScore.cur)+'</td><td>'+numField('mt.rep.ytd',mt.repScore.ytd)+'</td><td>'+statusSelect('mt.rep.status',mt.repScore.status)+'</td></tr>'+
+     '<tr><td>Food Quality %</td><td>'+numField('mt.fq.cur',mt.foodQuality.cur)+'</td><td>'+numField('mt.fq.ytd',mt.foodQuality.ytd)+'</td><td>'+statusSelect('mt.fq.status',mt.foodQuality.status)+'</td></tr>'+
+     '</tbody></table></div></div>';
+
+  /* Speed of Service */
+  h+='<div style="margin-bottom:22px"><div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px"><label style="font-weight:700">Speed of Service \u2014 KMS Lates %</label>'+statusSelect('mt.kms.status',mt.kmsLates.status)+'</div>'+
+     '<div class="tblwrap"><table class="grid" style="min-width:340px"><thead><tr><th>Last Week</th><th>PTD</th></tr></thead><tbody>'+
+     '<tr><td>'+numField('mt.kms.lastWeek',mt.kmsLates.lastWeek)+'</td><td>'+numField('mt.kms.ptd',mt.kmsLates.ptd)+'</td></tr>'+
+     '</tbody></table></div></div>';
+
+  /* Compliance */
+  h+='<div><label style="font-weight:700;display:block;margin-bottom:8px">Compliance</label>'+
+     '<div class="tblwrap"><table class="grid" style="min-width:520px"><thead><tr><th></th><th>Score</th><th>Last Audit</th><th>Colour</th></tr></thead><tbody>'+
+     '<tr><td>NSF %</td><td>'+numField('mt.nsf.score',mt.nsf.score)+'</td><td>'+dateField('mt.nsf.lastAudit',mt.nsf.lastAudit)+'</td><td>'+statusSelect('mt.nsf.status',mt.nsf.status)+'</td></tr>'+
+     '<tr><td>EHO</td><td>'+txtField('mt.eho.score',mt.eho.score,'e.g. 5/5')+'</td><td>'+dateField('mt.eho.lastAudit',mt.eho.lastAudit)+'</td><td>'+statusSelect('mt.eho.status',mt.eho.status)+'</td></tr>'+
+     '</tbody></table></div></div>'+
+
+     '</div></div>';
+  return h;
+}
 function renderMaster(){
   if(!ui.adminLevel){
     return '<div class="card"><div class="sec-head"><h2>Settings</h2></div><div class="pad">'+
@@ -1321,36 +1408,14 @@ function renderMaster(){
   });
   h+='</tbody></table></div><div class="pad row"><button class="btn primary" data-act="addM">Add morning cleaning job</button></div></div>';
 
-  /* defrost pars */
-  h+='<div class="card" id="msec-defrost" style="--sc:#2563eb">'+masterJumpNav('defrost','inline')+'<div class="sec-head"><h2>Defrost pars</h2><span class="prog">Defrost level by day</span></div><div class="tblwrap"><table class="grid" style="min-width:900px"><thead><tr><th>Item</th><th>How to count</th><th>Photo</th>';
+  /* sales forecast */
+  h+='<div class="card" id="msec-sales" style="--sc:#15803d">'+masterJumpNav('sales','inline')+'<div class="sec-head"><h2>Sales forecast</h2><span class="prog">By day of week</span></div><div class="pad">'+
+     '<p class="small muted" style="margin-top:0">'+esc(master.salesForecastNote||'')+'</p>'+
+     '<div class="tblwrap"><table class="grid" style="min-width:640px"><thead><tr>';
   DAYS.forEach(function(d){ h+='<th style="text-align:center">'+d.short+'</th>'; });
-  h+='<th></th></tr></thead><tbody>';
-  master.defrost.forEach(function(it,r){
-    var advOpen=!!ui.defrostAdv[it.id];
-    h+='<tr><td><input class="txt" style="max-width:180px" data-m="d.name" data-r="'+r+'" value="'+esc(it.name)+'">'+
-       '<div><input class="txt" style="max-width:260px;height:36px;margin-top:4px;font-size:13px" data-m="d.note" data-r="'+r+'" value="'+esc(it.note||'')+'" placeholder="Note shown under the item"></div>'+
-       '<div style="margin-top:6px"><button type="button" class="btn sm" data-act="toggleDefrostAdv" data-id="'+it.id+'">'+(advOpen?'\u25be':'\u25b8')+' Advanced</button></div>';
-    if(advOpen){
-      h+='<div style="margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:8px;background:#fafbfc;max-width:280px">'+
-         '<label class="small muted" style="display:block;font-weight:700;margin-bottom:6px">Badges</label>'+
-         '<div style="display:flex;flex-direction:column;gap:6px">';
-      for(var bk in ITEM_BADGES){
-        var bchecked=(it.badges||[]).indexOf(bk)>=0;
-        h+='<label style="display:flex;align-items:center;gap:8px;font-size:13px"><input type="checkbox" data-mchk="d.badge" data-badge="'+bk+'" data-r="'+r+'"'+(bchecked?' checked':'')+'> '+esc(ITEM_BADGES[bk].label)+'</label>';
-      }
-      h+='</div>'+
-         '<label class="small muted" style="display:block;font-weight:700;margin:12px 0 4px">Extended shelf life once taken out</label>'+
-         '<p class="small muted" style="margin:0 0 6px">Number of days total, counting the day it\'s taken out as day one. Leave blank for the normal day-dot system.</p>'+
-         '<input class="num" style="max-width:70px" data-m="d.shelfLifeDays" data-r="'+r+'" value="'+esc(it.shelfLifeDays||'')+'" placeholder="\u2014">'+
-         '</div>';
-    }
-    h+='</td>'+
-       '<td><input class="txt" style="max-width:130px" data-m="d.uom" data-r="'+r+'" value="'+esc(it.uom)+'"></td>'+
-       '<td>'+photoCell('d',r,it.img)+'</td>';
-    DK.forEach(function(k,c){ h+='<td><input class="num" inputmode="decimal" data-m="d.lv" data-r="'+r+'" data-c="'+c+'" value="'+esc(it.lv[c])+'"></td>'; });
-    h+='<td><button class="btn sm danger" data-act="delD" data-id="'+r+'">Delete</button></td></tr>';
-  });
-  h+='</tbody></table></div><div class="pad row"><button class="btn primary" data-act="addD">Add defrost item</button></div></div>';
+  h+='</tr></thead><tbody><tr>';
+  DAYS.forEach(function(d,c){ h+='<td><input class="num" inputmode="decimal" data-m="sf.day" data-c="'+c+'" value="'+esc(master.salesForecast[c])+'"></td>'; });
+  h+='</tr></tbody></table></div></div></div>';
 
   /* prep pars */
   h+='<div class="card" id="msec-prep" style="--sc:#0891b2">'+masterJumpNav('prep','inline')+'<div class="sec-head"><h2>Prep pars</h2><span class="prog">Quantity to have ready by day</span></div><div class="tblwrap"><table class="grid" style="min-width:900px"><thead><tr><th>Item</th><th>UOM</th><th>Photo</th>';
@@ -1402,6 +1467,37 @@ function renderMaster(){
   h+='<label style="display:block;font-weight:700;margin:16px 0 4px">Footer note</label><textarea data-m="w.footer" style="min-height:56px">'+esc(master.weeklyFooter)+'</textarea></div></div>';
 
   /* closedown */
+  h+='<div class="card" id="msec-defrost" style="--sc:#2563eb">'+masterJumpNav('defrost','inline')+'<div class="sec-head"><h2>Defrost pars</h2><span class="prog">Defrost level by day</span></div><div class="tblwrap"><table class="grid" style="min-width:900px"><thead><tr><th>Item</th><th>How to count</th><th>Photo</th>';
+  DAYS.forEach(function(d){ h+='<th style="text-align:center">'+d.short+'</th>'; });
+  h+='<th></th></tr></thead><tbody>';
+  master.defrost.forEach(function(it,r){
+    var advOpen=!!ui.defrostAdv[it.id];
+    h+='<tr><td><input class="txt" style="max-width:180px" data-m="d.name" data-r="'+r+'" value="'+esc(it.name)+'">'+
+       '<div><input class="txt" style="max-width:260px;height:36px;margin-top:4px;font-size:13px" data-m="d.note" data-r="'+r+'" value="'+esc(it.note||'')+'" placeholder="Note shown under the item"></div>'+
+       '<div style="margin-top:6px"><button type="button" class="btn sm" data-act="toggleDefrostAdv" data-id="'+it.id+'">'+(advOpen?'\u25be':'\u25b8')+' Advanced</button></div>';
+    if(advOpen){
+      h+='<div style="margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:8px;background:#fafbfc;max-width:280px">'+
+         '<label class="small muted" style="display:block;font-weight:700;margin-bottom:6px">Badges</label>'+
+         '<div style="display:flex;flex-direction:column;gap:6px">';
+      for(var bk in ITEM_BADGES){
+        var bchecked=(it.badges||[]).indexOf(bk)>=0;
+        h+='<label style="display:flex;align-items:center;gap:8px;font-size:13px"><input type="checkbox" data-mchk="d.badge" data-badge="'+bk+'" data-r="'+r+'"'+(bchecked?' checked':'')+'> '+esc(ITEM_BADGES[bk].label)+'</label>';
+      }
+      h+='</div>'+
+         '<label class="small muted" style="display:block;font-weight:700;margin:12px 0 4px">Extended shelf life once taken out</label>'+
+         '<p class="small muted" style="margin:0 0 6px">Number of days total, counting the day it\'s taken out as day one. Leave blank for the normal day-dot system.</p>'+
+         '<input class="num" style="max-width:70px" data-m="d.shelfLifeDays" data-r="'+r+'" value="'+esc(it.shelfLifeDays||'')+'" placeholder="\u2014">'+
+         '</div>';
+    }
+    h+='</td>'+
+       '<td><input class="txt" style="max-width:130px" data-m="d.uom" data-r="'+r+'" value="'+esc(it.uom)+'"></td>'+
+       '<td>'+photoCell('d',r,it.img)+'</td>';
+    DK.forEach(function(k,c){ h+='<td><input class="num" inputmode="decimal" data-m="d.lv" data-r="'+r+'" data-c="'+c+'" value="'+esc(it.lv[c])+'"></td>'; });
+    h+='<td><button class="btn sm danger" data-act="delD" data-id="'+r+'">Delete</button></td></tr>';
+  });
+  h+='</tbody></table></div><div class="pad row"><button class="btn primary" data-act="addD">Add defrost item</button></div></div>';
+
+  /* prep pars */
   h+='<div class="card" id="msec-closedown" style="--sc:#be123c">'+masterJumpNav('closedown','inline')+'<div class="sec-head"><h2>Daily closedown list</h2><span class="prog">One box per field</span></div>'+
      '<div class="tblwrap"><table class="grid" style="min-width:900px"><thead><tr><th>Task</th><th>Method (short)</th><th>Detail shown on tap</th><th>Note</th><th>Photo</th><th></th></tr></thead><tbody>';
   master.closedown.forEach(function(c,r){
@@ -1414,6 +1510,9 @@ function renderMaster(){
   });
   h+='</tbody></table></div><div class="pad row"><button class="btn primary" data-act="addC">Add closedown task</button></div>'+
      '<div class="pad" style="padding-top:0"><label style="display:block;font-weight:700;margin:0 0 4px">Closedown question</label><input class="txt" style="max-width:100%" data-m="tempQ" value="'+esc(master.tempQuestion)+'"></div></div>';
+
+  /* business metrics ("How are we doing?" source data) */
+  h+=renderMetricsSettings();
 
   /* kitchen managers */
   h+='<div class="card" id="msec-km" style="--sc:#9333ea"><div class="sec-head"><h2>Kitchen Managers</h2><span class="prog">Full access — can alter anything and sign off anything</span></div><div class="pad">'+
@@ -1794,6 +1893,7 @@ function handleDayInput(t,f){
   var dk=ui.tab, di=DK.indexOf(dk); if(di<0) return;
   var st=week.days[dk], id=t.getAttribute('data-id');
   if(f==='temp'){ st.temp=t.value; }
+  else if(f==='salesActual'){ st.salesActual=t.value===''?null:num(t.value); }
   else if(f.indexOf('m.')===0){
     st.morning=st.morning||{};
     st.morning[id]=st.morning[id]||{};
@@ -1847,6 +1947,27 @@ function handleDayInput(t,f){
 function handleMasterInput(t,m){
   var r=t.getAttribute('data-r'), c=t.getAttribute('data-c');
   if(m==='appTitle'){ master.appTitle=t.value; applyAppTitle(); }
+  else if(m==='sf.day') master.salesForecast[c]=t.value===''?0:num(t.value);
+  else if(m==='mt.fg.curAct') master.metrics.foodGp.curAct=t.value===''?null:num(t.value);
+  else if(m==='mt.fg.curLy') master.metrics.foodGp.curLy=t.value===''?null:num(t.value);
+  else if(m==='mt.fg.ytdAct') master.metrics.foodGp.ytdAct=t.value===''?null:num(t.value);
+  else if(m==='mt.fg.ytdLy') master.metrics.foodGp.ytdLy=t.value===''?null:num(t.value);
+  else if(m==='mt.fg.status') master.metrics.foodGp.status=t.value;
+  else if(m==='mt.rep.cur') master.metrics.repScore.cur=t.value===''?null:num(t.value);
+  else if(m==='mt.rep.ytd') master.metrics.repScore.ytd=t.value===''?null:num(t.value);
+  else if(m==='mt.rep.status') master.metrics.repScore.status=t.value;
+  else if(m==='mt.fq.cur') master.metrics.foodQuality.cur=t.value===''?null:num(t.value);
+  else if(m==='mt.fq.ytd') master.metrics.foodQuality.ytd=t.value===''?null:num(t.value);
+  else if(m==='mt.fq.status') master.metrics.foodQuality.status=t.value;
+  else if(m==='mt.kms.lastWeek') master.metrics.kmsLates.lastWeek=t.value===''?null:num(t.value);
+  else if(m==='mt.kms.ptd') master.metrics.kmsLates.ptd=t.value===''?null:num(t.value);
+  else if(m==='mt.kms.status') master.metrics.kmsLates.status=t.value;
+  else if(m==='mt.nsf.score') master.metrics.nsf.score=t.value===''?null:num(t.value);
+  else if(m==='mt.nsf.lastAudit') master.metrics.nsf.lastAudit=t.value;
+  else if(m==='mt.nsf.status') master.metrics.nsf.status=t.value;
+  else if(m==='mt.eho.score') master.metrics.eho.score=t.value;
+  else if(m==='mt.eho.lastAudit') master.metrics.eho.lastAudit=t.value;
+  else if(m==='mt.eho.status') master.metrics.eho.status=t.value;
   else if(m==='d.name') master.defrost[r].name=t.value;
   else if(m==='d.uom') master.defrost[r].uom=t.value;
   else if(m==='d.note') master.defrost[r].note=t.value;
@@ -2322,23 +2443,10 @@ function pullFromServer(isManual){
 }
 
 /* ---- "How are we doing?" metrics ----
-   Pulled from /api/metrics, which a Power Automate flow (fed by a
-   Microsoft Form) posts to whenever the numbers are updated. The tile
-   list is whatever was posted \u2014 fully flexible, no fixed metric names.
-   liveMetrics stays null until the first successful fetch returns a
-   value; render() falls back to the "Work in progress" placeholder
-   tiles until then. */
-var liveMetrics = null;
-function pullMetrics(){
-  return fetch('/api/metrics',{headers:apiHeaders()})
-    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
-    .then(function(d){
-      if(d && Array.isArray(d.tiles) && d.tiles.length){ liveMetrics = d; render(); }
-    })
-    .catch(function(){ /* leave placeholder tiles showing */ });
-}
+   Entered directly in Settings > Business metrics (master.metrics) and
+   rendered straight from there \u2014 no external flow or endpoint involved. */
 
-function boot(){ pullFromServer(false); pullMetrics(); }
+function boot(){ pullFromServer(false); }
 boot();
 
 /* keep pulling quietly while the app is open */
@@ -2349,10 +2457,10 @@ setInterval(function(){
 /* catch the case a standalone iOS PWA gets backgrounded and reopened —
    there's no reload here, just this tab becoming visible again */
 document.addEventListener('visibilitychange', function(){
-  if(document.visibilityState==='visible'){ pullFromServer(false); pullMetrics(); }
+  if(document.visibilityState==='visible'){ pullFromServer(false); }
 });
-window.addEventListener('focus', function(){ pullFromServer(false); pullMetrics(); });
-window.addEventListener('pageshow', function(){ pullFromServer(false); pullMetrics(); });
+window.addEventListener('focus', function(){ pullFromServer(false); });
+window.addEventListener('pageshow', function(){ pullFromServer(false); });
 
 /* manual fallback — the only "refresh gesture" available once installed as
    a standalone Home Screen app on iOS, where pull-to-refresh doesn't exist */
